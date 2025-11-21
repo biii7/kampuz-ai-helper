@@ -19,8 +19,9 @@ import { ContactManagement } from "./ContactManagement";
 import { ApiSettings } from "./ApiSettings";
 import { MessageTemplates } from "./MessageTemplates";
 import { ForwardingStats } from "./ForwardingStats";
-import { NotificationBell } from "./NotificationBell";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+// Import NotificationBell component
+import { NotificationBell } from "./NotificationBell";
 
 interface Ticket {
   id: string;
@@ -201,10 +202,10 @@ export const AdminDashboard = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-start justify-between mb-6 flex-col md:flex-row gap-4">
         <div>
-          <h1 className="text-3xl font-bold gradient-text">Dashboard Admin</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="text-2xl md:text-3xl font-bold gradient-text">Dashboard Admin</h1>
+          <p className="text-xs md:text-sm text-muted-foreground mt-1">
             Kelola tiket keluhan dan sistem penerusan otomatis
           </p>
         </div>
