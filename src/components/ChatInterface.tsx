@@ -5,11 +5,19 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Loader2, Bot, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { TicketDisplay } from "./TicketDisplay";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
   isTyping?: boolean;
+  ticketData?: {
+    ticketId: string;
+    nim: string;
+    kategori: string;
+    lokasi: string;
+    subjek: string;
+  };
 }
 
 export const ChatInterface = () => {
@@ -137,28 +145,18 @@ export const ChatInterface = () => {
 
         if (ticketError) throw ticketError;
 
-        const response = `╔══════════════════════════════════╗
-   🎫 TIKET KELUHAN MAHASISWA
-╚══════════════════════════════════╝
-
-✅ Keluhan Anda telah berhasil dicatat!
-
-📋 **Detail Tiket:**
-
-🆔 ID Tiket       : ${ticket.id.substring(0, 8).toUpperCase()}
-👤 NIM            : ${entities.nim}
-📂 Kategori       : ${kategori.toUpperCase()}
-📍 Lokasi         : ${entities.lokasi}
-📝 Subjek         : ${entities.subjek}
-🔄 Status         : ✔ TERKIRIM KE PIHAK BERWENANG
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Keluhan Anda akan segera ditindaklanjuti oleh tim terkait. Pantau status tiket di menu "Riwayat Tiket".
-
-Terima kasih telah menggunakan layanan kami! 🙏`;
-
-        await typeMessage(response);
+        // Add ticket display as a special message
+        setMessages(prev => [...prev, {
+          role: "assistant",
+          content: "",
+          ticketData: {
+            ticketId: ticket.id.substring(0, 8).toUpperCase(),
+            nim: entities.nim,
+            kategori: kategori,
+            lokasi: entities.lokasi,
+            subjek: entities.subjek
+          }
+        }]);
 
         toast({
           title: "✅ Tiket Berhasil Dibuat",
@@ -248,20 +246,24 @@ Terima kasih telah menggunakan layanan kami! 🙏`;
                 </div>
               )}
               
-              <div
-                className={`max-w-[85%] md:max-w-[75%] rounded-2xl p-3 md:p-4 shadow-lg transition-all duration-300 hover:shadow-xl ${
-                  message.role === "user"
-                    ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground"
-                    : "glass-card border border-border/50"
-                }`}
-              >
-                <p className="whitespace-pre-wrap text-xs md:text-sm leading-relaxed">
-                  {message.content}
-                  {message.isTyping && (
-                    <span className="inline-block w-1 h-4 ml-1 bg-current animate-pulse" />
-                  )}
-                </p>
-              </div>
+              {message.ticketData ? (
+                <TicketDisplay {...message.ticketData} />
+              ) : (
+                <div
+                  className={`max-w-[85%] md:max-w-[75%] rounded-2xl p-3 md:p-4 shadow-lg transition-all duration-300 hover:shadow-xl ${
+                    message.role === "user"
+                      ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground"
+                      : "glass-card border border-border/50"
+                  }`}
+                >
+                  <p className="whitespace-pre-wrap text-xs md:text-sm leading-relaxed">
+                    {message.content}
+                    {message.isTyping && (
+                      <span className="inline-block w-1 h-4 ml-1 bg-current animate-pulse" />
+                    )}
+                  </p>
+                </div>
+              )}
 
               {message.role === "user" && (
                 <div className="glass-card p-1.5 md:p-2 h-8 w-8 md:h-10 md:w-10 flex items-center justify-center flex-shrink-0 animate-scale-in">
