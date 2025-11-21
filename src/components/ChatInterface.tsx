@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface Message {
   role: "user" | "assistant";
   content: string;
+  isTyping?: boolean;
 }
 
 export const ChatInterface = () => {
@@ -28,6 +29,47 @@ export const ChatInterface = () => {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Smooth typing effect
+  const typeMessage = (content: string) => {
+    return new Promise<void>((resolve) => {
+      let currentText = "";
+      const typingSpeed = 20; // ms per character
+      const chars = content.split("");
+      
+      // Add empty message first
+      setMessages(prev => [...prev, { role: "assistant", content: "", isTyping: true }]);
+      
+      let index = 0;
+      const typingInterval = setInterval(() => {
+        if (index < chars.length) {
+          currentText += chars[index];
+          setMessages(prev => {
+            const newMessages = [...prev];
+            newMessages[newMessages.length - 1] = {
+              role: "assistant",
+              content: currentText,
+              isTyping: true
+            };
+            return newMessages;
+          });
+          index++;
+        } else {
+          clearInterval(typingInterval);
+          setMessages(prev => {
+            const newMessages = [...prev];
+            newMessages[newMessages.length - 1] = {
+              role: "assistant",
+              content: currentText,
+              isTyping: false
+            };
+            return newMessages;
+          });
+          resolve();
+        }
+      }, typingSpeed);
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,10 +98,7 @@ export const ChatInterface = () => {
 
         if (ragRes.error) throw ragRes.error;
 
-        setMessages(prev => [...prev, {
-          role: "assistant",
-          content: ragRes.data.answer
-        }]);
+        await typeMessage(ragRes.data.answer);
       } else {
         // Proses keluhan
         const [classifyRes, nerRes] = await Promise.all([
@@ -115,22 +154,21 @@ Keluhan Anda akan segera ditindaklanjuti oleh tim terkait. Pantau status tiket d
 
 Terima kasih telah menggunakan layanan kami! 🙏`;
 
-        setMessages(prev => [...prev, {
-          role: "assistant",
-          content: response
-        }]);
+        await typeMessage(response);
 
         toast({
           title: "✅ Tiket Berhasil Dibuat",
           description: `ID: ${ticket.id.substring(0, 8).toUpperCase()} - ${kategori.toUpperCase()}`,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error:", error);
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: "❌ Maaf, terjadi kesalahan dalam memproses pesan Anda. Silakan coba lagi atau hubungi administrator."
-      }]);
+      const errorMessage = error?.message?.includes("schema") 
+        ? "⚠️ Sistem sedang dalam perbaikan. Silakan coba beberapa saat lagi."
+        : "❌ Maaf, terjadi kesalahan dalam memproses pesan Anda. Silakan coba lagi atau hubungi administrator.";
+      
+      await typeMessage(errorMessage);
+      
       toast({
         title: "Error",
         description: "Gagal memproses pesan",
@@ -144,80 +182,91 @@ Terima kasih telah menggunakan layanan kami! 🙏`;
   return (
     <div className="glass-card max-w-5xl mx-auto overflow-hidden card-elevated">
       {/* Header */}
-      <div className="gradient-primary p-6">
-        <div className="flex items-center gap-3">
-          <Bot className="h-8 w-8 text-white" />
+      <div className="gradient-primary p-4 md:p-6">
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="glass-card p-2 rounded-xl animate-pulse">
+            <Bot className="h-6 w-6 md:h-8 md:w-8 text-white" />
+          </div>
           <div>
-            <h2 className="text-2xl font-bold text-white">Chatbot AI Kampus</h2>
-            <p className="text-white/80 text-sm">Powered by RAG & Intent Detection</p>
+            <h2 className="text-lg md:text-2xl font-bold text-white">Chatbot AI Kampus</h2>
+            <p className="text-white/80 text-xs md:text-sm">Powered by RAG & Intent Detection</p>
           </div>
         </div>
       </div>
 
       {/* Chat Messages */}
-      <ScrollArea ref={scrollRef} className="h-[500px] p-4 md:p-6 space-y-4">
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            className={`flex gap-2 md:gap-3 mb-4 animate-fade-in ${
-              message.role === "user" ? "justify-end" : "justify-start"
-            }`}
-            style={{ animationDelay: `${index * 0.1}s` }}
-          >
-            {message.role === "assistant" && (
-              <div className="glass-card p-2 h-8 w-8 md:h-10 md:w-10 flex items-center justify-center flex-shrink-0 animate-scale-in">
-                <Bot className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-              </div>
-            )}
-            
+      <ScrollArea ref={scrollRef} className="h-[400px] md:h-[500px] p-3 md:p-6">
+        <div className="space-y-4">
+          {messages.map((message, index) => (
             <div
-              className={`max-w-[85%] md:max-w-[75%] animate-fade-in ${
-                message.role === "user"
-                  ? "chat-bubble-user"
-                  : "chat-bubble-bot"
+              key={index}
+              className={`flex gap-2 md:gap-3 animate-fade-in ${
+                message.role === "user" ? "justify-end" : "justify-start"
               }`}
-              style={{ animationDelay: `${index * 0.1 + 0.1}s` }}
+              style={{ 
+                animationDelay: `${index * 0.05}s`,
+                animationDuration: "0.3s"
+              }}
             >
-              <p className="whitespace-pre-wrap text-xs md:text-sm leading-relaxed">{message.content}</p>
-            </div>
-
-            {message.role === "user" && (
-              <div className="glass-card p-2 h-8 w-8 md:h-10 md:w-10 flex items-center justify-center flex-shrink-0 animate-scale-in">
-                <User className="h-4 w-4 md:h-5 md:w-5 text-secondary" />
+              {message.role === "assistant" && (
+                <div className="glass-card p-1.5 md:p-2 h-8 w-8 md:h-10 md:w-10 flex items-center justify-center flex-shrink-0 animate-scale-in">
+                  <Bot className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                </div>
+              )}
+              
+              <div
+                className={`max-w-[85%] md:max-w-[75%] rounded-2xl p-3 md:p-4 shadow-lg transition-all duration-300 hover:shadow-xl ${
+                  message.role === "user"
+                    ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground"
+                    : "glass-card border border-border/50"
+                }`}
+              >
+                <p className="whitespace-pre-wrap text-xs md:text-sm leading-relaxed">
+                  {message.content}
+                  {message.isTyping && (
+                    <span className="inline-block w-1 h-4 ml-1 bg-current animate-pulse" />
+                  )}
+                </p>
               </div>
-            )}
-          </div>
-        ))}
-        
-        {isLoading && (
-          <div className="flex gap-3 mb-4 animate-fade-in">
-            <div className="glass-card p-2 h-10 w-10 flex items-center justify-center">
-              <Bot className="h-5 w-5 text-primary" />
+
+              {message.role === "user" && (
+                <div className="glass-card p-1.5 md:p-2 h-8 w-8 md:h-10 md:w-10 flex items-center justify-center flex-shrink-0 animate-scale-in">
+                  <User className="h-4 w-4 md:h-5 md:w-5 text-secondary" />
+                </div>
+              )}
             </div>
-            <div className="chat-bubble-bot flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-sm text-muted-foreground">Memproses...</span>
+          ))}
+          
+          {isLoading && (
+            <div className="flex gap-2 md:gap-3 animate-fade-in">
+              <div className="glass-card p-2 h-8 w-8 md:h-10 md:w-10 flex items-center justify-center">
+                <Bot className="h-4 w-4 md:h-5 md:w-5 text-primary animate-pulse" />
+              </div>
+              <div className="glass-card border border-border/50 rounded-2xl p-3 md:p-4 flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                <span className="text-xs md:text-sm text-muted-foreground">AI sedang berpikir...</span>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </ScrollArea>
 
       {/* Input Box */}
-      <form onSubmit={handleSubmit} className="p-6 border-t border-border/50">
-        <div className="flex gap-3">
+      <form onSubmit={handleSubmit} className="p-3 md:p-6 border-t border-border/50 bg-background/50 backdrop-blur">
+        <div className="flex gap-2 md:gap-3">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ketik keluhan atau pertanyaan Anda..."
+            placeholder="Ketik keluhan atau pertanyaan..."
             disabled={isLoading}
-            className="glass flex-1 rounded-full px-6 py-6 text-base border-border/50 focus:border-primary"
+            className="glass flex-1 rounded-full px-4 md:px-6 py-4 md:py-6 text-sm md:text-base border-border/50 focus:border-primary transition-all"
           />
           <Button
             type="submit"
             disabled={isLoading || !input.trim()}
-            className="gradient-primary rounded-full h-12 w-12 p-0 glow-hover"
+            className="gradient-primary rounded-full h-10 w-10 md:h-12 md:w-12 p-0 hover:scale-110 transition-transform shadow-lg"
           >
-            <Send className="h-5 w-5" />
+            <Send className="h-4 w-4 md:h-5 md:w-5" />
           </Button>
         </div>
       </form>
