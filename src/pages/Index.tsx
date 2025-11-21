@@ -16,12 +16,12 @@ const Index = () => {
 
   const checkAdminStatus = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
         const { data } = await supabase
           .from("user_roles")
           .select("role")
-          .eq("user_id", user.id)
+          .eq("user_id", session.user.id)
           .eq("role", "admin")
           .single();
         setIsAdmin(!!data);
@@ -104,6 +104,17 @@ const Index = () => {
                 Lihat Riwayat Tiket
               </Button>
             </div>
+
+            {/* Admin Login Link */}
+            <div className="mt-8 animate-fade-in" style={{ animationDelay: '0.6s' }}>
+              <a
+                href="/admin"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-2"
+              >
+                <Shield className="h-4 w-4" />
+                Login Admin
+              </a>
+            </div>
           </div>
         </main>
       </div>
@@ -147,14 +158,26 @@ const Index = () => {
                 Tiket
               </Button>
               {isAdmin && (
-                <Button
-                  variant={view === "admin" ? "default" : "ghost"}
-                  className={view === "admin" ? "gradient-primary" : "glass"}
-                  onClick={() => setView("admin")}
-                >
-                  <Shield className="h-4 w-4 mr-2" />
-                  Admin
-                </Button>
+                <>
+                  <Button
+                    variant={view === "admin" ? "default" : "ghost"}
+                    className={view === "admin" ? "gradient-primary" : "glass"}
+                    onClick={() => setView("admin")}
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
+                    Admin
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="glass"
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      window.location.href = "/admin";
+                    }}
+                  >
+                    Logout
+                  </Button>
+                </>
               )}
             </div>
           </div>
