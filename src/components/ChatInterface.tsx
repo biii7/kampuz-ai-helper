@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { TicketDisplay } from "./TicketDisplay";
 import Confetti from "react-confetti";
-import { playSuccessSound } from "@/utils/soundEffects";
+import { playSuccessSound, playSadSound, playFrustratedSound, playWorriedSound, playNeutralSound } from "@/utils/soundEffects";
 
 interface Message {
   role: "user" | "assistant";
@@ -112,17 +112,24 @@ export const ChatInterface = () => {
         await typeMessage(ragRes.data.answer);
       } else {
         // Proses keluhan
-        const [classifyRes, nerRes] = await Promise.all([
+        const [classifyRes, nerRes, sentimentRes] = await Promise.all([
           supabase.functions.invoke("process-complaint", {
             body: { message: userMessage, type: "classify" }
           }),
           supabase.functions.invoke("process-complaint", {
             body: { message: userMessage, type: "ner" }
+          }),
+          supabase.functions.invoke("process-complaint", {
+            body: { message: userMessage, type: "sentiment" }
           })
         ]);
 
-        if (classifyRes.error || nerRes.error) {
-          console.error("AI classification / NER error", { classifyError: classifyRes.error, nerError: nerRes.error });
+        if (classifyRes.error || nerRes.error || sentimentRes.error) {
+          console.error("AI processing error", { 
+            classifyError: classifyRes.error, 
+            nerError: nerRes.error,
+            sentimentError: sentimentRes.error 
+          });
         }
 
         const kategori = classifyRes.data?.kategori || "lainnya";
@@ -131,6 +138,34 @@ export const ChatInterface = () => {
           lokasi: "tidak disebutkan",
           subjek: "keluhan umum",
         };
+        const sentiment = sentimentRes.data?.sentiment || "neutral";
+
+        // Play sound effect based on sentiment
+        if (sentiment === "frustrated") {
+          playFrustratedSound();
+        } else if (sentiment === "sad") {
+          playSadSound();
+        } else if (sentiment === "worried") {
+          playWorriedSound();
+        } else {
+          playNeutralSound();
+        }
+
+        // Generate empathetic response based on sentiment
+        const empatheticRes = await supabase.functions.invoke("process-complaint", {
+          body: { 
+            message: userMessage, 
+            type: "empathetic_response",
+            sentiment: sentiment,
+            kategori: kategori
+          }
+        });
+
+        const empatheticMessage = empatheticRes.data?.response || 
+          "Terima kasih telah menyampaikan keluhan Anda. Kami akan segera menindaklanjuti.";
+
+        // Show empathetic response first
+        await typeMessage(empatheticMessage);
 
         // Simpan tiket
         const { data: ticket, error: ticketError } = await supabase

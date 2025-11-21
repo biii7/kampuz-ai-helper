@@ -189,6 +189,94 @@ Jawab dengan ramah dan informatif. Jika informasi tidak ada dalam dokumen, berit
       });
     }
 
+    // Sentiment detection untuk keluhan
+    if (type === "sentiment") {
+      const sentimentPrompt = `Analisis sentimen/emosi dari teks keluhan ini dan klasifikasikan ke salah satu:
+- frustrated (frustrasi/marah/kesal)
+- sad (sedih/kecewa)
+- worried (cemas/khawatir)
+- neutral (netral/biasa saja)
+
+Teks: ${message}
+
+Balas hanya dengan satu kata: frustrated, sad, worried, atau neutral`;
+
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [{ role: "user", content: sentimentPrompt }],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Sentiment analysis error");
+      }
+
+      const data = await response.json();
+      const sentiment = data.choices[0]?.message?.content?.trim().toLowerCase();
+      
+      return new Response(JSON.stringify({ sentiment }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Generate empathetic response based on sentiment
+    if (type === "empathetic_response") {
+      const body = await req.json();
+      const sentiment = body.sentiment || "neutral";
+      const kategori = body.kategori || "umum";
+      const userMessage = body.message || "";
+      
+      let tone = "";
+      if (sentiment === "frustrated") {
+        tone = "dengan nada yang sangat memahami frustrasi pengguna, tunjukkan empati yang tulus";
+      } else if (sentiment === "sad") {
+        tone = "dengan nada yang lembut dan penuh empati, tunjukkan pengertian atas kekecewaan pengguna";
+      } else if (sentiment === "worried") {
+        tone = "dengan nada yang menenangkan dan meyakinkan, bantu kurangi kecemasan pengguna";
+      } else {
+        tone = "dengan nada profesional dan ramah";
+      }
+
+      const responsePrompt = `Kamu adalah asisten kampus yang berempati. Buat respon singkat (maksimal 2 kalimat) ${tone} untuk keluhan kategori ${kategori}.
+
+Keluhan: ${userMessage}
+
+Respon harus:
+- Mengakui perasaan dan situasi pengguna
+- Meyakinkan bahwa masalah akan ditangani
+- Jangan terlalu formal, gunakan bahasa yang hangat
+- PENTING: Jangan menyebutkan ID tiket atau detail teknis, hanya fokus pada empati`;
+
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [{ role: "user", content: responsePrompt }],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Response generation error");
+      }
+
+      const data = await response.json();
+      const empatheticResponse = data.choices[0]?.message?.content;
+      
+      return new Response(JSON.stringify({ response: empatheticResponse }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Invalid type parameter" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
