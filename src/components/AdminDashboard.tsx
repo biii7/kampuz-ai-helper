@@ -11,11 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { Shield, Send, FileText, User, MapPin, Calendar, AlertCircle, Search, BarChart3, Users } from "lucide-react";
+import { Shield, Send, FileText, User, MapPin, Calendar, AlertCircle, Search, BarChart3, Users, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { AdminAnalytics } from "./AdminAnalytics";
 import { SubAdminManagement } from "./SubAdminManagement";
 import { ContactManagement } from "./ContactManagement";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
 interface Ticket {
   id: string;
@@ -62,6 +63,31 @@ export const AdminDashboard = () => {
 
   useEffect(() => {
     loadTickets();
+
+    // Set up realtime subscription for new tickets
+    const channel: RealtimeChannel = supabase
+      .channel('tickets-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'tickets'
+        },
+        (payload) => {
+          console.log('New ticket received:', payload);
+          toast.success(`🔔 Tiket Baru Masuk!`, {
+            description: `Kategori: ${payload.new.kategori} - ${payload.new.subjek}`,
+            duration: 5000,
+          });
+          loadTickets();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadTickets = async () => {
