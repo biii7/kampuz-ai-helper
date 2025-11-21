@@ -12,7 +12,8 @@ serve(async (req) => {
   }
 
   try {
-    const { message, type } = await req.json();
+    const requestBody = await req.json();
+    const { message, type, sentiment, kategori } = requestBody;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -227,23 +228,22 @@ Balas hanya dengan satu kata: frustrated, sad, worried, atau neutral`;
 
     // Generate empathetic response based on sentiment
     if (type === "empathetic_response") {
-      const body = await req.json();
-      const sentiment = body.sentiment || "neutral";
-      const kategori = body.kategori || "umum";
-      const userMessage = body.message || "";
+      const currentSentiment = sentiment || "neutral";
+      const currentKategori = kategori || "umum";
+      const userMessage = message || "";
       
       let tone = "";
-      if (sentiment === "frustrated") {
+      if (currentSentiment === "frustrated") {
         tone = "dengan nada yang sangat memahami frustrasi pengguna, tunjukkan empati yang tulus";
-      } else if (sentiment === "sad") {
+      } else if (currentSentiment === "sad") {
         tone = "dengan nada yang lembut dan penuh empati, tunjukkan pengertian atas kekecewaan pengguna";
-      } else if (sentiment === "worried") {
+      } else if (currentSentiment === "worried") {
         tone = "dengan nada yang menenangkan dan meyakinkan, bantu kurangi kecemasan pengguna";
       } else {
         tone = "dengan nada profesional dan ramah";
       }
 
-      const responsePrompt = `Kamu adalah asisten kampus yang berempati. Buat respon singkat (maksimal 2 kalimat) ${tone} untuk keluhan kategori ${kategori}.
+      const responsePrompt = `Kamu adalah asisten kampus yang berempati. Buat respon singkat (maksimal 2 kalimat) ${tone} untuk keluhan kategori ${currentKategori}.
 
 Keluhan: ${userMessage}
 
