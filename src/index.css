@@ -2,80 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Premium Design System - Gradient Blue-Purple Theme */
+/* Premium Design System - Blue-White Theme */
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    --background: 210 100% 97%;
+    --foreground: 210 40% 15%;
 
-    --card: 240 10% 8%;
-    --card-foreground: 0 0% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 210 40% 15%;
 
-    --popover: 240 10% 8%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 40% 15%;
 
-    --primary: 263 70% 60%;
+    --primary: 210 100% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 70% 55%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 210 40% 15%;
 
-    --muted: 240 10% 15%;
-    --muted-foreground: 240 5% 65%;
+    --muted: 210 40% 92%;
+    --muted-foreground: 210 20% 45%;
 
-    --accent: 263 70% 50%;
+    --accent: 200 100% 45%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 240 10% 20%;
-    --input: 240 10% 15%;
-    --ring: 263 70% 60%;
+    --border: 210 40% 85%;
+    --input: 210 40% 85%;
+    --ring: 210 100% 50%;
 
     --radius: 1rem;
 
     /* Premium gradient colors */
-    --gradient-start: 263 70% 60%;
-    --gradient-end: 220 70% 55%;
+    --gradient-start: 210 100% 50%;
+    --gradient-middle: 200 100% 45%;
+    --gradient-end: 190 90% 50%;
     
     /* Glassmorphism */
-    --glass-bg: 240 10% 8% / 0.7;
-    --glass-border: 240 10% 25% / 0.3;
-  }
-
-  .light {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-
-    --primary: 263 70% 50%;
-    --primary-foreground: 0 0% 98%;
-
-    --secondary: 220 70% 50%;
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 3.8% 46.1%;
-
-    --accent: 263 70% 50%;
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 263 70% 50%;
-
-    --glass-bg: 0 0% 100% / 0.7;
-    --glass-border: 240 5% 85% / 0.5;
+    --glass-bg: 0 0% 100% / 0.85;
+    --glass-border: 210 40% 85% / 0.5;
   }
 }
 
@@ -86,7 +54,7 @@
 
   body {
     @apply bg-background text-foreground;
-    background: radial-gradient(circle at top, hsl(263 70% 20%), hsl(240 10% 3.9%));
+    background: linear-gradient(135deg, hsl(210 100% 97%), hsl(200 100% 95%), hsl(190 90% 93%));
     background-attachment: fixed;
   }
 }
@@ -95,9 +63,10 @@
   /* Glassmorphism effect */
   .glass {
     background: hsla(var(--glass-bg));
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
     border: 1px solid hsla(var(--glass-border));
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
   }
 
   .glass-card {
@@ -106,11 +75,11 @@
 
   /* Premium gradients */
   .gradient-primary {
-    background: linear-gradient(135deg, hsl(var(--gradient-start)), hsl(var(--gradient-end)));
+    background: linear-gradient(135deg, hsl(var(--gradient-start)), hsl(var(--gradient-middle)), hsl(var(--gradient-end)));
   }
 
   .gradient-text {
-    @apply bg-gradient-to-r from-[hsl(var(--gradient-start))] to-[hsl(var(--gradient-end))] bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-[hsl(var(--gradient-start))] via-[hsl(var(--gradient-middle))] to-[hsl(var(--gradient-end))] bg-clip-text text-transparent;
   }
 
   /* Glow effects */
@@ -126,11 +95,11 @@
 
   /* Chat bubbles */
   .chat-bubble-user {
-    @apply bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--secondary))] text-primary-foreground rounded-3xl px-5 py-3 shadow-lg;
+    @apply bg-gradient-to-br from-[hsl(var(--primary))] via-[hsl(var(--gradient-middle))] to-[hsl(var(--accent))] text-primary-foreground rounded-3xl px-5 py-3 shadow-lg;
   }
 
   .chat-bubble-bot {
-    @apply glass rounded-3xl px-5 py-3 shadow-md;
+    @apply glass rounded-3xl px-5 py-3 shadow-md border-2 border-primary/10;
   }
 
   /* Premium animations */

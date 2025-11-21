@@ -15,6 +15,7 @@ import { Shield, Send, FileText, User, MapPin, Calendar, AlertCircle, Search, Ba
 import { toast } from "sonner";
 import { AdminAnalytics } from "./AdminAnalytics";
 import { SubAdminManagement } from "./SubAdminManagement";
+import { ContactManagement } from "./ContactManagement";
 
 interface Ticket {
   id: string;
@@ -124,14 +125,18 @@ export const AdminDashboard = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <Tabs defaultValue="tickets" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 glass border-border/50">
+        <TabsList className="grid w-full grid-cols-4 glass border-2 border-primary/20">
           <TabsTrigger value="tickets" className="data-[state=active]:gradient-primary data-[state=active]:text-white">
             <FileText className="h-4 w-4 mr-2" />
-            Kelola Tiket
+            Tiket
           </TabsTrigger>
           <TabsTrigger value="analytics" className="data-[state=active]:gradient-primary data-[state=active]:text-white">
             <BarChart3 className="h-4 w-4 mr-2" />
             Analytics
+          </TabsTrigger>
+          <TabsTrigger value="contacts" className="data-[state=active]:gradient-primary data-[state=active]:text-white">
+            <Send className="h-4 w-4 mr-2" />
+            Kontak
           </TabsTrigger>
           <TabsTrigger value="admins" className="data-[state=active]:gradient-primary data-[state=active]:text-white">
             <Users className="h-4 w-4 mr-2" />
@@ -347,6 +352,10 @@ export const AdminDashboard = () => {
 
         <TabsContent value="analytics" className="mt-6">
           <AdminAnalytics />
+        </TabsContent>
+
+        <TabsContent value="contacts" className="mt-6">
+          <ContactManagement />
         </TabsContent>
 
         <TabsContent value="admins" className="mt-6">

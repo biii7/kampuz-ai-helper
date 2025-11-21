@@ -38,10 +38,62 @@ export type Database = {
         }
         Relationships: []
       }
+      forwarding_contacts: {
+        Row: {
+          category: string
+          contact_type: string
+          contact_value: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          category: string
+          contact_type: string
+          contact_value: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          category?: string
+          contact_type?: string
+          contact_value?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          id: string
+          setting_key: string
+          setting_value: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          setting_key: string
+          setting_value: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          setting_key?: string
+          setting_value?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tickets: {
         Row: {
           assigned_at: string | null
           assigned_to: string | null
+          auto_forwarded: boolean | null
           created_at: string
           deskripsi: string
           id: string
@@ -56,6 +108,7 @@ export type Database = {
         Insert: {
           assigned_at?: string | null
           assigned_to?: string | null
+          auto_forwarded?: boolean | null
           created_at?: string
           deskripsi: string
           id?: string
@@ -70,6 +123,7 @@ export type Database = {
         Update: {
           assigned_at?: string | null
           assigned_to?: string | null
+          auto_forwarded?: boolean | null
           created_at?: string
           deskripsi?: string
           id?: string

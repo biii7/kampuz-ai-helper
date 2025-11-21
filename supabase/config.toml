@@ -2,3 +2,6 @@ project_id = "hqmkzfejbsgjbhadetst"
 
 [functions.process-complaint]
 verify_jwt = false
+
+[functions.forward-ticket]
+verify_jwt = false
