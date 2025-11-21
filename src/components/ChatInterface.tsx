@@ -6,6 +6,7 @@ import { Send, Loader2, Bot, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { TicketDisplay } from "./TicketDisplay";
+import Confetti from "react-confetti";
 
 interface Message {
   role: "user" | "assistant";
@@ -29,6 +30,7 @@ export const ChatInterface = () => {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -145,7 +147,14 @@ export const ChatInterface = () => {
 
         if (ticketError) throw ticketError;
 
-        // Add ticket display as a special message
+        // First show success message with typing effect
+        await typeMessage("🎉 Tiket keluhan Anda berhasil dibuat!\n\nTiket Anda telah diterima dan akan segera diproses oleh tim terkait. Berikut detail tiket Anda:");
+
+        // Trigger confetti celebration
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 5000);
+
+        // Then show ticket display
         setMessages(prev => [...prev, {
           role: "assistant",
           content: "",
@@ -212,7 +221,16 @@ export const ChatInterface = () => {
   };
 
   return (
-    <div className="glass-card max-w-5xl mx-auto overflow-hidden card-elevated">
+    <div className="glass-card max-w-5xl mx-auto overflow-hidden card-elevated relative">
+      {showConfetti && (
+        <Confetti
+          width={window.innerWidth}
+          height={window.innerHeight}
+          recycle={false}
+          numberOfPieces={500}
+          gravity={0.3}
+        />
+      )}
       {/* Header */}
       <div className="gradient-primary p-4 md:p-6">
         <div className="flex items-center gap-2 md:gap-3">
