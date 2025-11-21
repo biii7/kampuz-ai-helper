@@ -155,33 +155,35 @@ Terima kasih telah menggunakan layanan kami! 🙏`;
       </div>
 
       {/* Chat Messages */}
-      <ScrollArea ref={scrollRef} className="h-[500px] p-6 space-y-4">
+      <ScrollArea ref={scrollRef} className="h-[500px] p-4 md:p-6 space-y-4">
         {messages.map((message, index) => (
           <div
             key={index}
-            className={`flex gap-3 mb-4 animate-slide-in ${
+            className={`flex gap-2 md:gap-3 mb-4 animate-fade-in ${
               message.role === "user" ? "justify-end" : "justify-start"
             }`}
+            style={{ animationDelay: `${index * 0.1}s` }}
           >
             {message.role === "assistant" && (
-              <div className="glass-card p-2 h-10 w-10 flex items-center justify-center flex-shrink-0">
-                <Bot className="h-5 w-5 text-primary" />
+              <div className="glass-card p-2 h-8 w-8 md:h-10 md:w-10 flex items-center justify-center flex-shrink-0 animate-scale-in">
+                <Bot className="h-4 w-4 md:h-5 md:w-5 text-primary" />
               </div>
             )}
             
             <div
-              className={`max-w-[75%] ${
+              className={`max-w-[85%] md:max-w-[75%] animate-fade-in ${
                 message.role === "user"
-                  ? "chat-bubble-user slide-in-right"
+                  ? "chat-bubble-user"
                   : "chat-bubble-bot"
               }`}
+              style={{ animationDelay: `${index * 0.1 + 0.1}s` }}
             >
-              <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
+              <p className="whitespace-pre-wrap text-xs md:text-sm leading-relaxed">{message.content}</p>
             </div>
 
             {message.role === "user" && (
-              <div className="glass-card p-2 h-10 w-10 flex items-center justify-center flex-shrink-0">
-                <User className="h-5 w-5 text-secondary" />
+              <div className="glass-card p-2 h-8 w-8 md:h-10 md:w-10 flex items-center justify-center flex-shrink-0 animate-scale-in">
+                <User className="h-4 w-4 md:h-5 md:w-5 text-secondary" />
               </div>
             )}
           </div>

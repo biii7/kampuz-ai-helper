@@ -11,12 +11,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { Shield, Send, FileText, User, MapPin, Calendar, AlertCircle, Search, BarChart3, Users, Bell } from "lucide-react";
+import { Shield, Send, FileText, User, MapPin, Calendar, AlertCircle, Search, BarChart3, Users, Bell, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { AdminAnalytics } from "./AdminAnalytics";
 import { SubAdminManagement } from "./SubAdminManagement";
 import { ContactManagement } from "./ContactManagement";
 import { ApiSettings } from "./ApiSettings";
+import { MessageTemplates } from "./MessageTemplates";
+import { ForwardingStats } from "./ForwardingStats";
+import { NotificationBell } from "./NotificationBell";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 interface Ticket {
@@ -198,29 +201,49 @@ export const AdminDashboard = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold gradient-text">Dashboard Admin</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Kelola tiket keluhan dan sistem penerusan otomatis
+          </p>
+        </div>
+        <NotificationBell />
+      </div>
+
       <Tabs defaultValue="tickets" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 glass border-2 border-primary/20">
-          <TabsTrigger value="tickets" className="data-[state=active]:gradient-primary data-[state=active]:text-white">
-            <FileText className="h-4 w-4 mr-2" />
-            Tiket
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="data-[state=active]:gradient-primary data-[state=active]:text-white">
-            <BarChart3 className="h-4 w-4 mr-2" />
-            Analytics
-          </TabsTrigger>
-          <TabsTrigger value="contacts" className="data-[state=active]:gradient-primary data-[state=active]:text-white">
-            <Send className="h-4 w-4 mr-2" />
-            Kontak
-          </TabsTrigger>
-          <TabsTrigger value="api" className="data-[state=active]:gradient-primary data-[state=active]:text-white">
-            <Shield className="h-4 w-4 mr-2" />
-            API
-          </TabsTrigger>
-          <TabsTrigger value="admins" className="data-[state=active]:gradient-primary data-[state=active]:text-white">
-            <Users className="h-4 w-4 mr-2" />
-            Sub-Admin
-          </TabsTrigger>
-        </TabsList>
+        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg pb-4">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-7 glass border-2 border-primary/20 gap-1">
+            <TabsTrigger value="tickets" className="data-[state=active]:gradient-primary data-[state=active]:text-white text-xs md:text-sm">
+              <FileText className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+              <span className="hidden md:inline">Tiket</span>
+            </TabsTrigger>
+            <TabsTrigger value="stats" className="data-[state=active]:gradient-primary data-[state=active]:text-white text-xs md:text-sm">
+              <TrendingUp className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+              <span className="hidden md:inline">Statistik</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="data-[state=active]:gradient-primary data-[state=active]:text-white text-xs md:text-sm">
+              <BarChart3 className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+              <span className="hidden md:inline">Analytics</span>
+            </TabsTrigger>
+            <TabsTrigger value="templates" className="data-[state=active]:gradient-primary data-[state=active]:text-white text-xs md:text-sm">
+              <FileText className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+              <span className="hidden md:inline">Template</span>
+            </TabsTrigger>
+            <TabsTrigger value="contacts" className="data-[state=active]:gradient-primary data-[state=active]:text-white text-xs md:text-sm">
+              <Send className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+              <span className="hidden md:inline">Kontak</span>
+            </TabsTrigger>
+            <TabsTrigger value="api" className="data-[state=active]:gradient-primary data-[state=active]:text-white text-xs md:text-sm">
+              <Shield className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+              <span className="hidden md:inline">API</span>
+            </TabsTrigger>
+            <TabsTrigger value="admins" className="data-[state=active]:gradient-primary data-[state=active]:text-white text-xs md:text-sm">
+              <Users className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+              <span className="hidden md:inline">Admin</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="tickets" className="mt-6">
           {isLoading ? (
@@ -468,8 +491,16 @@ export const AdminDashboard = () => {
           )}
         </TabsContent>
 
+        <TabsContent value="stats" className="mt-6">
+          <ForwardingStats />
+        </TabsContent>
+
         <TabsContent value="analytics" className="mt-6">
           <AdminAnalytics />
+        </TabsContent>
+
+        <TabsContent value="templates" className="mt-6">
+          <MessageTemplates />
         </TabsContent>
 
         <TabsContent value="contacts" className="mt-6">

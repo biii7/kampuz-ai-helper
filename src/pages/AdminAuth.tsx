@@ -36,7 +36,7 @@ export default function AdminAuth() {
         .single();
       
       if (data) {
-        navigate("/");
+        navigate("/", { replace: true });
       }
     }
   };
