@@ -1,11 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChatInterface } from "@/components/ChatInterface";
 import { TicketHistory } from "@/components/TicketHistory";
-import { GraduationCap, MessageSquare, Ticket, Sparkles } from "lucide-react";
+import { AdminDashboard } from "@/components/AdminDashboard";
+import { GraduationCap, MessageSquare, Ticket, Sparkles, Shield } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
-  const [view, setView] = useState<"hero" | "chat" | "tickets">("hero");
+  const [view, setView] = useState<"hero" | "chat" | "tickets" | "admin">("hero");
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    checkAdminStatus();
+  }, []);
+
+  const checkAdminStatus = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .single();
+        setIsAdmin(!!data);
+      }
+    } catch (error) {
+      console.error("Error checking admin status:", error);
+    }
+  };
 
   if (view === "hero") {
     return (
@@ -122,6 +146,16 @@ const Index = () => {
                 <Ticket className="h-4 w-4 mr-2" />
                 Tiket
               </Button>
+              {isAdmin && (
+                <Button
+                  variant={view === "admin" ? "default" : "ghost"}
+                  className={view === "admin" ? "gradient-primary" : "glass"}
+                  onClick={() => setView("admin")}
+                >
+                  <Shield className="h-4 w-4 mr-2" />
+                  Admin
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -130,7 +164,9 @@ const Index = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="animate-fade-in">
-          {view === "chat" ? <ChatInterface /> : <TicketHistory />}
+          {view === "chat" && <ChatInterface />}
+          {view === "tickets" && <TicketHistory />}
+          {view === "admin" && isAdmin && <AdminDashboard />}
         </div>
       </main>
     </div>
