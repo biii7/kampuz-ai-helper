@@ -1,0 +1,371 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Trash2, Mail, Phone, Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+interface Contact {
+  id: string;
+  name: string;
+  contact_type: "email" | "whatsapp";
+  contact_value: string;
+  category: string;
+  is_active: boolean;
+}
+
+const categories = [
+  "fasilitas",
+  "akademik",
+  "administrasi",
+  "keuangan",
+  "pelanggaran",
+  "ppid",
+];
+
+export const ContactManagement = () => {
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [autoForwardEnabled, setAutoForwardEnabled] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  const [newContact, setNewContact] = useState({
+    name: "",
+    contact_type: "email" as "email" | "whatsapp",
+    contact_value: "",
+    category: "fasilitas",
+  });
+
+  useEffect(() => {
+    fetchContacts();
+    fetchAutoForwardSetting();
+  }, []);
+
+  const fetchContacts = async () => {
+    const { data, error } = await supabase
+      .from("forwarding_contacts")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Gagal memuat kontak",
+        variant: "destructive",
+      });
+    } else {
+      setContacts((data as Contact[]) || []);
+    }
+    setLoading(false);
+  };
+
+  const fetchAutoForwardSetting = async () => {
+    const { data } = await supabase
+      .from("system_settings")
+      .select("setting_value")
+      .eq("setting_key", "auto_forward_enabled")
+      .single();
+
+    if (data) {
+      setAutoForwardEnabled(data.setting_value === "true");
+    }
+  };
+
+  const toggleAutoForward = async (enabled: boolean) => {
+    const { error } = await supabase
+      .from("system_settings")
+      .update({ setting_value: enabled.toString(), updated_at: new Date().toISOString() })
+      .eq("setting_key", "auto_forward_enabled");
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Gagal mengubah pengaturan",
+        variant: "destructive",
+      });
+    } else {
+      setAutoForwardEnabled(enabled);
+      toast({
+        title: "Berhasil",
+        description: `Auto-forward ${enabled ? "diaktifkan" : "dinonaktifkan"}`,
+      });
+    }
+  };
+
+  const addContact = async () => {
+    if (!newContact.name || !newContact.contact_value) {
+      toast({
+        title: "Error",
+        description: "Mohon lengkapi semua field",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { error } = await supabase.from("forwarding_contacts").insert([
+      {
+        name: newContact.name,
+        contact_type: newContact.contact_type,
+        contact_value: newContact.contact_value,
+        category: newContact.category,
+        is_active: true,
+      },
+    ]);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Gagal menambah kontak",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Berhasil",
+        description: "Kontak berhasil ditambahkan",
+      });
+      setNewContact({
+        name: "",
+        contact_type: "email",
+        contact_value: "",
+        category: "fasilitas",
+      });
+      fetchContacts();
+    }
+  };
+
+  const deleteContact = async (id: string) => {
+    const { error } = await supabase
+      .from("forwarding_contacts")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Gagal menghapus kontak",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Berhasil",
+        description: "Kontak berhasil dihapus",
+      });
+      fetchContacts();
+    }
+  };
+
+  const toggleContactActive = async (id: string, is_active: boolean) => {
+    const { error } = await supabase
+      .from("forwarding_contacts")
+      .update({ is_active })
+      .eq("id", id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Gagal mengubah status kontak",
+        variant: "destructive",
+      });
+    } else {
+      fetchContacts();
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-24 bg-muted/50 rounded-lg animate-pulse"
+          />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Auto Forward Toggle */}
+      <Card className="p-6 bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-primary/20">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">
+              Auto-Forward Keluhan
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Teruskan keluhan otomatis ke kontak terdaftar
+            </p>
+          </div>
+          <Switch
+            checked={autoForwardEnabled}
+            onCheckedChange={toggleAutoForward}
+            className="data-[state=checked]:bg-primary"
+          />
+        </div>
+      </Card>
+
+      {/* Add New Contact */}
+      <Card className="p-6 border-2 border-primary/20">
+        <h3 className="text-lg font-semibold mb-4 text-foreground">
+          Tambah Kontak Baru
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="name">Nama</Label>
+            <Input
+              id="name"
+              value={newContact.name}
+              onChange={(e) =>
+                setNewContact({ ...newContact, name: e.target.value })
+              }
+              placeholder="Nama penerima"
+              className="border-primary/30"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="type">Tipe Kontak</Label>
+            <Select
+              value={newContact.contact_type}
+              onValueChange={(value: "email" | "whatsapp") =>
+                setNewContact({ ...newContact, contact_type: value })
+              }
+            >
+              <SelectTrigger className="border-primary/30">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="email">Email</SelectItem>
+                <SelectItem value="whatsapp">WhatsApp</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="contact">
+              {newContact.contact_type === "email" ? "Email" : "Nomor WhatsApp"}
+            </Label>
+            <Input
+              id="contact"
+              value={newContact.contact_value}
+              onChange={(e) =>
+                setNewContact({ ...newContact, contact_value: e.target.value })
+              }
+              placeholder={
+                newContact.contact_type === "email"
+                  ? "email@example.com"
+                  : "628123456789"
+              }
+              className="border-primary/30"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="category">Kategori</Label>
+            <Select
+              value={newContact.category}
+              onValueChange={(value) =>
+                setNewContact({ ...newContact, category: value })
+              }
+            >
+              <SelectTrigger className="border-primary/30">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <Button
+          onClick={addContact}
+          className="mt-4 bg-gradient-to-r from-primary to-accent hover:opacity-90"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Tambah Kontak
+        </Button>
+      </Card>
+
+      {/* Contact List */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-foreground">Daftar Kontak</h3>
+        {contacts.length === 0 ? (
+          <Card className="p-8 text-center border-2 border-dashed border-primary/30">
+            <p className="text-muted-foreground">Belum ada kontak terdaftar</p>
+          </Card>
+        ) : (
+          contacts.map((contact) => (
+            <Card
+              key={contact.id}
+              className="p-4 border-2 border-primary/20 hover:border-primary/40 transition-all"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 flex-1">
+                  <div
+                    className={`p-3 rounded-lg ${
+                      contact.contact_type === "email"
+                        ? "bg-primary/10"
+                        : "bg-accent/10"
+                    }`}
+                  >
+                    {contact.contact_type === "email" ? (
+                      <Mail className="h-5 w-5 text-primary" />
+                    ) : (
+                      <Phone className="h-5 w-5 text-accent" />
+                    )}
+                  </div>
+
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-foreground">
+                      {contact.name}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      {contact.contact_value}
+                    </p>
+                    <span className="inline-block mt-1 px-2 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
+                      {contact.category.charAt(0).toUpperCase() +
+                        contact.category.slice(1)}
+                    </span>
+                  </div>
+
+                  <Switch
+                    checked={contact.is_active}
+                    onCheckedChange={(checked) =>
+                      toggleContactActive(contact.id, checked)
+                    }
+                    className="data-[state=checked]:bg-primary"
+                  />
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => deleteContact(contact.id)}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};

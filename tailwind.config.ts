@@ -48,6 +48,18 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         glass: "hsla(var(--glass-bg))",
+        chart: {
+          "1": "hsl(210, 100%, 50%)",
+          "2": "hsl(200, 100%, 45%)",
+          "3": "hsl(190, 90%, 50%)",
+          "4": "hsl(220, 85%, 55%)",
+          "5": "hsl(205, 95%, 48%)",
+        },
+        gradient: {
+          start: "hsl(210, 100%, 50%)",
+          middle: "hsl(200, 100%, 45%)",
+          end: "hsl(190, 90%, 50%)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
