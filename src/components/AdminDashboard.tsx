@@ -213,7 +213,7 @@ export const AdminDashboard = () => {
       </div>
 
       <Tabs defaultValue="tickets" className="w-full">
-        <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-xl pb-3 md:pb-4 border-b border-border/20">
+        <div className="sticky top-[52px] md:top-[60px] z-50 bg-background backdrop-blur-xl pb-3 md:pb-4 border-b border-border/20 shadow-lg">
           <TabsList className="w-full grid grid-cols-4 sm:grid-cols-7 glass border-2 border-primary/20 gap-0.5 md:gap-1 p-1">
             <TabsTrigger 
               value="tickets" 
