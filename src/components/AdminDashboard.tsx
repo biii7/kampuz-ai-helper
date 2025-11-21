@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { AdminAnalytics } from "./AdminAnalytics";
 import { SubAdminManagement } from "./SubAdminManagement";
 import { ContactManagement } from "./ContactManagement";
+import { ApiSettings } from "./ApiSettings";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 interface Ticket {
@@ -30,6 +31,16 @@ interface Ticket {
   assigned_to: string | null;
   assigned_at: string | null;
   notes: string | null;
+  auto_forwarded: boolean | null;
+}
+
+interface ForwardingContact {
+  id: string;
+  name: string;
+  contact_type: string;
+  contact_value: string;
+  category: string;
+  is_active: boolean;
 }
 
 const categoryConfig: Record<string, { color: string; label: string }> = {
@@ -60,9 +71,11 @@ export const AdminDashboard = () => {
   const [assignTo, setAssignTo] = useState("");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [forwardingContacts, setForwardingContacts] = useState<ForwardingContact[]>([]);
 
   useEffect(() => {
     loadTickets();
+    loadForwardingContacts();
 
     // Set up realtime subscription for new tickets
     const channel: RealtimeChannel = supabase
@@ -105,6 +118,41 @@ export const AdminDashboard = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const loadForwardingContacts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("forwarding_contacts")
+        .select("*")
+        .eq("is_active", true);
+
+      if (error) throw error;
+      setForwardingContacts(data || []);
+    } catch (error) {
+      console.error("Error loading contacts:", error);
+    }
+  };
+
+  const toggleAutoForward = async (ticketId: string, currentValue: boolean | null) => {
+    try {
+      const { error } = await supabase
+        .from("tickets")
+        .update({ auto_forwarded: !currentValue })
+        .eq("id", ticketId);
+
+      if (error) throw error;
+
+      toast.success(!currentValue ? "Auto-forward diaktifkan" : "Auto-forward dinonaktifkan");
+      loadTickets();
+    } catch (error) {
+      console.error("Error toggling auto-forward:", error);
+      toast.error("Gagal mengubah status auto-forward");
+    }
+  };
+
+  const getSuggestedContacts = (category: string) => {
+    return forwardingContacts.filter(contact => contact.category === category);
   };
 
   const handleAssignTicket = async () => {
@@ -151,7 +199,7 @@ export const AdminDashboard = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <Tabs defaultValue="tickets" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 glass border-2 border-primary/20">
+        <TabsList className="grid w-full grid-cols-5 glass border-2 border-primary/20">
           <TabsTrigger value="tickets" className="data-[state=active]:gradient-primary data-[state=active]:text-white">
             <FileText className="h-4 w-4 mr-2" />
             Tiket
@@ -163,6 +211,10 @@ export const AdminDashboard = () => {
           <TabsTrigger value="contacts" className="data-[state=active]:gradient-primary data-[state=active]:text-white">
             <Send className="h-4 w-4 mr-2" />
             Kontak
+          </TabsTrigger>
+          <TabsTrigger value="api" className="data-[state=active]:gradient-primary data-[state=active]:text-white">
+            <Shield className="h-4 w-4 mr-2" />
+            API
           </TabsTrigger>
           <TabsTrigger value="admins" className="data-[state=active]:gradient-primary data-[state=active]:text-white">
             <Users className="h-4 w-4 mr-2" />
@@ -308,6 +360,46 @@ export const AdminDashboard = () => {
                                 )}
                               </div>
                             )}
+
+                            {/* Auto-forward toggle and suggestions */}
+                            <div className="mt-4 space-y-3">
+                              <div className="flex items-center justify-between p-3 glass-card rounded-xl">
+                                <div className="flex items-center gap-2">
+                                  <Send className="h-4 w-4 text-primary" />
+                                  <span className="text-sm font-semibold text-foreground">
+                                    Teruskan Otomatis
+                                  </span>
+                                </div>
+                                <Button
+                                  onClick={() => toggleAutoForward(ticket.id, ticket.auto_forwarded)}
+                                  variant={ticket.auto_forwarded ? "default" : "outline"}
+                                  size="sm"
+                                  className={ticket.auto_forwarded ? "gradient-primary text-white" : ""}
+                                >
+                                  {ticket.auto_forwarded ? "Aktif" : "Nonaktif"}
+                                </Button>
+                              </div>
+
+                              {getSuggestedContacts(ticket.kategori).length > 0 && (
+                                <div className="p-3 glass-card rounded-xl">
+                                  <p className="text-sm text-muted-foreground mb-2">
+                                    💡 Saran Tujuan Penerusan:
+                                  </p>
+                                  <div className="space-y-2">
+                                    {getSuggestedContacts(ticket.kategori).map((contact) => (
+                                      <div key={contact.id} className="flex items-center gap-2 text-sm">
+                                        <div className="h-2 w-2 rounded-full bg-primary"></div>
+                                        <span className="font-semibold text-foreground">{contact.name}</span>
+                                        <span className="text-muted-foreground">
+                                          ({contact.contact_type === "email" ? "📧" : "📱"}{" "}
+                                          {contact.contact_value})
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
 
@@ -382,6 +474,10 @@ export const AdminDashboard = () => {
 
         <TabsContent value="contacts" className="mt-6">
           <ContactManagement />
+        </TabsContent>
+
+        <TabsContent value="api" className="mt-6">
+          <ApiSettings />
         </TabsContent>
 
         <TabsContent value="admins" className="mt-6">
