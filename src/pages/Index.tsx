@@ -106,15 +106,17 @@ const Index = () => {
             </div>
 
             {/* Admin Login Link */}
-            <div className="mt-8 animate-fade-in" style={{ animationDelay: '0.6s' }}>
-              <a
-                href="/admin"
-                className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-2"
-              >
-                <Shield className="h-4 w-4" />
-                Login Admin
-              </a>
-            </div>
+            {!isAdmin && (
+              <div className="mt-8 animate-fade-in" style={{ animationDelay: '0.6s' }}>
+                <a
+                  href="/admin"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-2"
+                >
+                  <Shield className="h-4 w-4" />
+                  Login Admin
+                </a>
+              </div>
+            )}
           </div>
         </main>
       </div>
@@ -125,37 +127,39 @@ const Index = () => {
     <div className="min-h-screen">
       {/* Header */}
       <header className="glass border-b border-border/50 sticky top-0 z-40 backdrop-blur-xl">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-3 md:py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={() => setView("hero")}
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+              className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity"
             >
-              <div className="glass-card p-2">
-                <GraduationCap className="h-6 w-6 text-primary" />
+              <div className="glass-card p-1.5 md:p-2">
+                <GraduationCap className="h-5 w-5 md:h-6 md:w-6 text-primary" />
               </div>
               <div className="text-left">
-                <h1 className="text-lg font-bold gradient-text">Sistem Keluhan Kampus</h1>
-                <p className="text-xs text-muted-foreground">UIN Alauddin Makassar</p>
+                <h1 className="text-sm md:text-lg font-bold gradient-text">Sistem Keluhan Kampus</h1>
+                <p className="text-xs text-muted-foreground hidden md:block">UIN Alauddin Makassar</p>
               </div>
             </button>
 
-            <div className="flex gap-2">
+            <div className="flex gap-1 md:gap-2">
               <Button
                 variant={view === "chat" ? "default" : "ghost"}
                 className={view === "chat" ? "gradient-primary" : "glass"}
                 onClick={() => setView("chat")}
+                size="sm"
               >
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Chat
+                <MessageSquare className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Chat</span>
               </Button>
               <Button
                 variant={view === "tickets" ? "default" : "ghost"}
                 className={view === "tickets" ? "gradient-primary" : "glass"}
                 onClick={() => setView("tickets")}
+                size="sm"
               >
-                <Ticket className="h-4 w-4 mr-2" />
-                Tiket
+                <Ticket className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Tiket</span>
               </Button>
               {isAdmin && (
                 <>
@@ -163,9 +167,10 @@ const Index = () => {
                     variant={view === "admin" ? "default" : "ghost"}
                     className={view === "admin" ? "gradient-primary" : "glass"}
                     onClick={() => setView("admin")}
+                    size="sm"
                   >
-                    <Shield className="h-4 w-4 mr-2" />
-                    Admin
+                    <Shield className="h-4 w-4 md:mr-2" />
+                    <span className="hidden md:inline">Admin</span>
                   </Button>
                   <Button
                     variant="ghost"
@@ -174,8 +179,9 @@ const Index = () => {
                       await supabase.auth.signOut();
                       window.location.href = "/admin";
                     }}
+                    size="sm"
                   >
-                    Logout
+                    <span className="text-xs md:text-sm">Logout</span>
                   </Button>
                 </>
               )}
