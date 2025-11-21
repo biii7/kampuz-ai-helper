@@ -111,11 +111,15 @@ export const ChatInterface = () => {
         ]);
 
         if (classifyRes.error || nerRes.error) {
-          throw new Error("Gagal memproses keluhan");
+          console.error("AI classification / NER error", { classifyError: classifyRes.error, nerError: nerRes.error });
         }
 
-        const kategori = classifyRes.data?.kategori;
-        const entities = nerRes.data;
+        const kategori = classifyRes.data?.kategori || "lainnya";
+        const entities = nerRes.data || {
+          nim: "tidak disebutkan",
+          lokasi: "tidak disebutkan",
+          subjek: "keluhan umum",
+        };
 
         // Simpan tiket
         const { data: ticket, error: ticketError } = await supabase
