@@ -37,6 +37,7 @@ export const ContactManagement = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [autoForwardEnabled, setAutoForwardEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const { toast } = useToast();
 
   const [newContact, setNewContact] = useState({
@@ -143,6 +144,35 @@ export const ContactManagement = () => {
     }
   };
 
+  const updateContact = async () => {
+    if (!editingContact) return;
+
+    const { error } = await supabase
+      .from("forwarding_contacts")
+      .update({
+        name: editingContact.name,
+        contact_type: editingContact.contact_type,
+        contact_value: editingContact.contact_value,
+        category: editingContact.category,
+      })
+      .eq("id", editingContact.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Gagal mengupdate kontak",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Berhasil",
+        description: "Kontak berhasil diupdate",
+      });
+      setEditingContact(null);
+      fetchContacts();
+    }
+  };
+
   const deleteContact = async (id: string) => {
     const { error } = await supabase
       .from("forwarding_contacts")
@@ -215,19 +245,21 @@ export const ContactManagement = () => {
         </div>
       </Card>
 
-      {/* Add New Contact */}
+      {/* Add/Edit Contact */}
       <Card className="p-6 border-2 border-primary/20">
         <h3 className="text-lg font-semibold mb-4 text-foreground">
-          Tambah Kontak Baru
+          {editingContact ? "Edit Kontak" : "Tambah Kontak Baru"}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="name">Nama</Label>
             <Input
               id="name"
-              value={newContact.name}
+              value={editingContact ? editingContact.name : newContact.name}
               onChange={(e) =>
-                setNewContact({ ...newContact, name: e.target.value })
+                editingContact
+                  ? setEditingContact({ ...editingContact, name: e.target.value })
+                  : setNewContact({ ...newContact, name: e.target.value })
               }
               placeholder="Nama penerima"
               className="border-primary/30"
@@ -237,9 +269,11 @@ export const ContactManagement = () => {
           <div>
             <Label htmlFor="type">Tipe Kontak</Label>
             <Select
-              value={newContact.contact_type}
+              value={editingContact ? editingContact.contact_type : newContact.contact_type}
               onValueChange={(value: "email" | "whatsapp") =>
-                setNewContact({ ...newContact, contact_type: value })
+                editingContact
+                  ? setEditingContact({ ...editingContact, contact_type: value })
+                  : setNewContact({ ...newContact, contact_type: value })
               }
             >
               <SelectTrigger className="border-primary/30">
@@ -254,16 +288,20 @@ export const ContactManagement = () => {
 
           <div>
             <Label htmlFor="contact">
-              {newContact.contact_type === "email" ? "Email" : "Nomor WhatsApp"}
+              {(editingContact ? editingContact.contact_type : newContact.contact_type) === "email" 
+                ? "Email" 
+                : "Nomor WhatsApp"}
             </Label>
             <Input
               id="contact"
-              value={newContact.contact_value}
+              value={editingContact ? editingContact.contact_value : newContact.contact_value}
               onChange={(e) =>
-                setNewContact({ ...newContact, contact_value: e.target.value })
+                editingContact
+                  ? setEditingContact({ ...editingContact, contact_value: e.target.value })
+                  : setNewContact({ ...newContact, contact_value: e.target.value })
               }
               placeholder={
-                newContact.contact_type === "email"
+                (editingContact ? editingContact.contact_type : newContact.contact_type) === "email"
                   ? "email@example.com"
                   : "628123456789"
               }
@@ -274,9 +312,11 @@ export const ContactManagement = () => {
           <div>
             <Label htmlFor="category">Kategori</Label>
             <Select
-              value={newContact.category}
+              value={editingContact ? editingContact.category : newContact.category}
               onValueChange={(value) =>
-                setNewContact({ ...newContact, category: value })
+                editingContact
+                  ? setEditingContact({ ...editingContact, category: value })
+                  : setNewContact({ ...newContact, category: value })
               }
             >
               <SelectTrigger className="border-primary/30">
@@ -293,13 +333,24 @@ export const ContactManagement = () => {
           </div>
         </div>
 
-        <Button
-          onClick={addContact}
-          className="mt-4 bg-gradient-to-r from-primary to-accent hover:opacity-90"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Tambah Kontak
-        </Button>
+        <div className="flex gap-2 mt-4">
+          <Button
+            onClick={editingContact ? updateContact : addContact}
+            className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            {editingContact ? "Update Kontak" : "Tambah Kontak"}
+          </Button>
+          {editingContact && (
+            <Button
+              onClick={() => setEditingContact(null)}
+              variant="outline"
+              className="border-primary/30"
+            >
+              Batal
+            </Button>
+          )}
+        </div>
       </Card>
 
       {/* Contact List */}
@@ -351,6 +402,15 @@ export const ContactManagement = () => {
                     }
                     className="data-[state=checked]:bg-primary"
                   />
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setEditingContact(contact)}
+                    className="text-primary hover:text-primary hover:bg-primary/10"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
 
                   <Button
                     variant="ghost"
