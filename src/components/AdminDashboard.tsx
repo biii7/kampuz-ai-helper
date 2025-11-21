@@ -213,35 +213,57 @@ export const AdminDashboard = () => {
       </div>
 
       <Tabs defaultValue="tickets" className="w-full">
-        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg pb-4">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-7 glass border-2 border-primary/20 gap-1">
-            <TabsTrigger value="tickets" className="data-[state=active]:gradient-primary data-[state=active]:text-white text-xs md:text-sm">
-              <FileText className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
-              <span className="hidden md:inline">Tiket</span>
+        <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-xl pb-3 md:pb-4 border-b border-border/20">
+          <TabsList className="w-full grid grid-cols-4 sm:grid-cols-7 glass border-2 border-primary/20 gap-0.5 md:gap-1 p-1">
+            <TabsTrigger 
+              value="tickets" 
+              className="data-[state=active]:gradient-primary data-[state=active]:text-white text-[10px] sm:text-xs md:text-sm px-1 md:px-3 py-1.5 md:py-2"
+            >
+              <FileText className="h-3 w-3 md:h-4 md:w-4 sm:mr-1 md:mr-2" />
+              <span className="hidden sm:inline">Tiket</span>
             </TabsTrigger>
-            <TabsTrigger value="stats" className="data-[state=active]:gradient-primary data-[state=active]:text-white text-xs md:text-sm">
-              <TrendingUp className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
-              <span className="hidden md:inline">Statistik</span>
+            <TabsTrigger 
+              value="stats" 
+              className="data-[state=active]:gradient-primary data-[state=active]:text-white text-[10px] sm:text-xs md:text-sm px-1 md:px-3 py-1.5 md:py-2"
+            >
+              <TrendingUp className="h-3 w-3 md:h-4 md:w-4 sm:mr-1 md:mr-2" />
+              <span className="hidden sm:inline">Stat</span>
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="data-[state=active]:gradient-primary data-[state=active]:text-white text-xs md:text-sm">
-              <BarChart3 className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
-              <span className="hidden md:inline">Analytics</span>
+            <TabsTrigger 
+              value="analytics" 
+              className="data-[state=active]:gradient-primary data-[state=active]:text-white text-[10px] sm:text-xs md:text-sm px-1 md:px-3 py-1.5 md:py-2"
+            >
+              <BarChart3 className="h-3 w-3 md:h-4 md:w-4 sm:mr-1 md:mr-2" />
+              <span className="hidden sm:inline">Chart</span>
             </TabsTrigger>
-            <TabsTrigger value="templates" className="data-[state=active]:gradient-primary data-[state=active]:text-white text-xs md:text-sm">
-              <FileText className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
-              <span className="hidden md:inline">Template</span>
+            <TabsTrigger 
+              value="templates" 
+              className="data-[state=active]:gradient-primary data-[state=active]:text-white text-[10px] sm:text-xs md:text-sm px-1 md:px-3 py-1.5 md:py-2"
+            >
+              <FileText className="h-3 w-3 md:h-4 md:w-4 sm:mr-1 md:mr-2" />
+              <span className="hidden lg:inline">Template</span>
+              <span className="lg:hidden hidden sm:inline">Tmpl</span>
             </TabsTrigger>
-            <TabsTrigger value="contacts" className="data-[state=active]:gradient-primary data-[state=active]:text-white text-xs md:text-sm">
-              <Send className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
-              <span className="hidden md:inline">Kontak</span>
+            <TabsTrigger 
+              value="contacts" 
+              className="hidden sm:flex data-[state=active]:gradient-primary data-[state=active]:text-white text-[10px] sm:text-xs md:text-sm px-1 md:px-3 py-1.5 md:py-2"
+            >
+              <Send className="h-3 w-3 md:h-4 md:w-4 sm:mr-1 md:mr-2" />
+              <span className="hidden sm:inline">Kontak</span>
             </TabsTrigger>
-            <TabsTrigger value="api" className="data-[state=active]:gradient-primary data-[state=active]:text-white text-xs md:text-sm">
-              <Shield className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
-              <span className="hidden md:inline">API</span>
+            <TabsTrigger 
+              value="api" 
+              className="hidden sm:flex data-[state=active]:gradient-primary data-[state=active]:text-white text-[10px] sm:text-xs md:text-sm px-1 md:px-3 py-1.5 md:py-2"
+            >
+              <Shield className="h-3 w-3 md:h-4 md:w-4 sm:mr-1 md:mr-2" />
+              <span className="hidden sm:inline">API</span>
             </TabsTrigger>
-            <TabsTrigger value="admins" className="data-[state=active]:gradient-primary data-[state=active]:text-white text-xs md:text-sm">
-              <Users className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
-              <span className="hidden md:inline">Admin</span>
+            <TabsTrigger 
+              value="admins" 
+              className="hidden sm:flex data-[state=active]:gradient-primary data-[state=active]:text-white text-[10px] sm:text-xs md:text-sm px-1 md:px-3 py-1.5 md:py-2"
+            >
+              <Users className="h-3 w-3 md:h-4 md:w-4 sm:mr-1 md:mr-2" />
+              <span className="hidden sm:inline">Admin</span>
             </TabsTrigger>
           </TabsList>
         </div>
