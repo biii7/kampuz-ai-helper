@@ -162,16 +162,46 @@ Terima kasih telah menggunakan layanan kami! 🙏`;
         });
       }
     } catch (error: any) {
-      console.error("Error:", error);
-      const errorMessage = error?.message?.includes("schema") 
-        ? "⚠️ Sistem sedang dalam perbaikan. Silakan coba beberapa saat lagi."
-        : "❌ Maaf, terjadi kesalahan dalam memproses pesan Anda. Silakan coba lagi atau hubungi administrator.";
+      console.error("Chat Error Details:", error);
+      
+      // Check for specific error types
+      let errorMessage = "❌ Maaf, terjadi kesalahan dalam memproses pesan Anda.";
+      let toastDescription = "Gagal memproses pesan";
+      
+      if (error?.message) {
+        console.error("Error Message:", error.message);
+        
+        if (error.message.includes("LOVABLE_API_KEY")) {
+          errorMessage = "⚠️ Sistem AI belum dikonfigurasi. Silakan hubungi administrator.";
+          toastDescription = "Konfigurasi API belum lengkap";
+        } else if (error.message.includes("429") || error.message.includes("rate limit")) {
+          errorMessage = "⚠️ Terlalu banyak permintaan. Silakan tunggu sebentar dan coba lagi.";
+          toastDescription = "Rate limit tercapai";
+        } else if (error.message.includes("402") || error.message.includes("payment")) {
+          errorMessage = "⚠️ Sistem sedang dalam perbaikan. Silakan coba beberapa saat lagi.";
+          toastDescription = "Kredit AI habis";
+        } else if (error.message.includes("network") || error.message.includes("fetch")) {
+          errorMessage = "⚠️ Masalah koneksi internet. Silakan periksa koneksi Anda.";
+          toastDescription = "Koneksi gagal";
+        } else if (error.message.includes("schema")) {
+          errorMessage = "⚠️ Sistem sedang dalam perbaikan. Silakan coba beberapa saat lagi.";
+          toastDescription = "Database error";
+        }
+      }
+      
+      // Log the full error for debugging
+      if (error?.data) {
+        console.error("Error Data:", error.data);
+      }
+      if (error?.error) {
+        console.error("Supabase Error:", error.error);
+      }
       
       await typeMessage(errorMessage);
       
       toast({
         title: "Error",
-        description: "Gagal memproses pesan",
+        description: toastDescription,
         variant: "destructive",
       });
     } finally {
