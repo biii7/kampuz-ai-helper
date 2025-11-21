@@ -45,11 +45,13 @@
     --glass-bg: 0 0% 100% / 0.85;
     --glass-border: 210 40% 85% / 0.5;
   }
-}
 
-@layer base {
   * {
     @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
   }
 
   body {
@@ -171,5 +173,21 @@
 
   .status-completed {
     @apply bg-green-500/20 text-green-300 border border-green-500/30;
+  }
+
+  /* Smooth tab transitions */
+  [role="tabpanel"] {
+    animation: fadeInScale 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes fadeInScale {
+    from {
+      opacity: 0;
+      transform: scale(0.98) translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
   }
 }
