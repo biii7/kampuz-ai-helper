@@ -217,33 +217,20 @@ const Index = () => {
             </header>
           )}
 
-          {/* Mobile Menu Toggle & Fixed Notification for Admin View */}
+          {/* Fixed Toggle & Notification for Admin View - Both Mobile & Desktop */}
           {view === "admin" && isAdmin && (
-            <>
-              {/* Mobile Menu Button */}
-              <div className="lg:hidden fixed top-4 left-4 z-40">
-                <SidebarTrigger>
-                  <Button
-                    variant="default"
-                    size="icon"
-                    className="gradient-primary shadow-lg"
-                  >
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                </SidebarTrigger>
-              </div>
-              
-              {/* Desktop Toggle & Notification */}
-              <div className="hidden lg:flex fixed top-4 right-4 z-40 gap-2 items-center">
-                <SidebarTrigger />
-                <NotificationBell />
-              </div>
-              
-              {/* Mobile Notification Only */}
-              <div className="lg:hidden fixed top-4 right-4 z-40">
-                <NotificationBell />
-              </div>
-            </>
+            <div className="fixed top-4 right-4 z-40 flex gap-2 items-center">
+              <SidebarTrigger>
+                <Button
+                  variant="default"
+                  size="icon"
+                  className="gradient-primary shadow-lg h-10 w-10"
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SidebarTrigger>
+              <NotificationBell />
+            </div>
           )}
 
           {/* Main Content */}
