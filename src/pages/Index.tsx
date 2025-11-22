@@ -7,6 +7,7 @@ import { GraduationCap, MessageSquare, Ticket, Sparkles, Shield } from "lucide-r
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
+import { NotificationBell } from "@/components/NotificationBell";
 
 const Index = () => {
   const [view, setView] = useState<"hero" | "chat" | "tickets" | "admin">("hero");
@@ -129,16 +130,12 @@ const Index = () => {
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Header */}
-          <header className="glass border-b border-border/50 sticky top-0 z-50 backdrop-blur-xl bg-background/95 h-16 flex-shrink-0">
-            <div className="h-full px-4 md:px-6">
-              <div className="flex items-center justify-between h-full gap-4">
-                {/* Left side - Trigger and Logo */}
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  {view === "admin" && isAdmin && (
-                    <SidebarTrigger className="flex-shrink-0" />
-                  )}
-                  
+          {/* Header - Only show when NOT in admin view */}
+          {view !== "admin" && (
+            <header className="glass border-b border-border/50 sticky top-0 z-50 backdrop-blur-xl bg-background/95 h-16 flex-shrink-0">
+              <div className="h-full px-4 md:px-6">
+                <div className="flex items-center justify-between h-full gap-4">
+                  {/* Logo */}
                   <button
                     onClick={() => setView("hero")}
                     className="flex items-center gap-2 hover:opacity-80 transition-opacity min-w-0"
@@ -151,36 +148,30 @@ const Index = () => {
                       <p className="text-xs text-muted-foreground truncate">UIN Alauddin Makassar</p>
                     </div>
                   </button>
-                </div>
 
-                {/* Right side - Navigation */}
-                <nav className="flex gap-2 items-center flex-shrink-0">
-                  {view !== "admin" && (
-                    <>
-                      <Button
-                        variant={view === "chat" ? "default" : "ghost"}
-                        className={`${view === "chat" ? "gradient-primary" : "glass"} h-9 text-sm`}
-                        onClick={() => setView("chat")}
-                        size="sm"
-                      >
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        <span className="hidden md:inline">Chat</span>
-                      </Button>
-                      <Button
-                        variant={view === "tickets" ? "default" : "ghost"}
-                        className={`${view === "tickets" ? "gradient-primary" : "glass"} h-9 text-sm`}
-                        onClick={() => setView("tickets")}
-                        size="sm"
-                      >
-                        <Ticket className="h-4 w-4 mr-2" />
-                        <span className="hidden md:inline">Tiket</span>
-                      </Button>
-                    </>
-                  )}
-                  
-                  {isAdmin && (
-                    <>
-                      {view !== "admin" && (
+                  {/* Navigation */}
+                  <nav className="flex gap-2 items-center flex-shrink-0">
+                    <Button
+                      variant={view === "chat" ? "default" : "ghost"}
+                      className={`${view === "chat" ? "gradient-primary" : "glass"} h-9 text-sm`}
+                      onClick={() => setView("chat")}
+                      size="sm"
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      <span className="hidden md:inline">Chat</span>
+                    </Button>
+                    <Button
+                      variant={view === "tickets" ? "default" : "ghost"}
+                      className={`${view === "tickets" ? "gradient-primary" : "glass"} h-9 text-sm`}
+                      onClick={() => setView("tickets")}
+                      size="sm"
+                    >
+                      <Ticket className="h-4 w-4 mr-2" />
+                      <span className="hidden md:inline">Tiket</span>
+                    </Button>
+                    
+                    {isAdmin ? (
+                      <>
                         <Button
                           variant="ghost"
                           className="glass h-9 text-sm"
@@ -190,42 +181,47 @@ const Index = () => {
                           <Shield className="h-4 w-4" />
                           <span className="hidden md:inline ml-2">Admin</span>
                         </Button>
-                      )}
+                        <Button
+                          variant="ghost"
+                          className="glass h-9 text-sm"
+                          onClick={async () => {
+                            await supabase.auth.signOut();
+                            window.location.href = "/admin-auth";
+                          }}
+                          size="sm"
+                        >
+                          <span className="text-xs">Keluar</span>
+                        </Button>
+                      </>
+                    ) : (
                       <Button
                         variant="ghost"
                         className="glass h-9 text-sm"
-                        onClick={async () => {
-                          await supabase.auth.signOut();
-                          window.location.href = "/admin-auth";
-                        }}
+                        onClick={() => window.location.href = "/admin-auth"}
                         size="sm"
                       >
-                        <span className="text-xs">Keluar</span>
+                        <Shield className="h-4 w-4" />
+                        <span className="hidden md:inline ml-2">Login</span>
                       </Button>
-                    </>
-                  )}
-                  
-                  {!isAdmin && (
-                    <Button
-                      variant="ghost"
-                      className="glass h-9 text-sm"
-                      onClick={() => window.location.href = "/admin-auth"}
-                      size="sm"
-                    >
-                      <Shield className="h-4 w-4" />
-                      <span className="hidden md:inline ml-2">Login</span>
-                    </Button>
-                  )}
-                </nav>
+                    )}
+                  </nav>
+                </div>
               </div>
+            </header>
+          )}
+
+          {/* Fixed Notification Bell for Admin View */}
+          {view === "admin" && isAdmin && (
+            <div className="fixed top-4 right-4 z-50">
+              <NotificationBell />
             </div>
-          </header>
+          )}
 
           {/* Main Content */}
           <main className="flex-1 overflow-auto">
             {view === "admin" && isAdmin ? (
               <div className="p-6 md:p-8">
-                <AdminDashboard activeTab={adminTab} />
+                <AdminDashboard activeTab={adminTab} hideNotification={true} />
               </div>
             ) : (
               <div className="container mx-auto px-4 py-8">

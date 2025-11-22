@@ -64,9 +64,10 @@ const authorityOptions = [
 
 interface AdminDashboardProps {
   activeTab: "tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins";
+  hideNotification?: boolean;
 }
 
-export const AdminDashboard = ({ activeTab }: AdminDashboardProps) => {
+export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDashboardProps) => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -231,7 +232,7 @@ export const AdminDashboard = ({ activeTab }: AdminDashboardProps) => {
                 Kelola dan teruskan tiket keluhan ke pihak berwenang
               </p>
             </div>
-            <NotificationBell />
+            {!hideNotification && <NotificationBell />}
           </div>
           
           {isLoading ? (
