@@ -114,7 +114,7 @@ const Index = () => {
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex flex-col w-full">
         {/* Header */}
         <header className="glass border-b border-border/50 sticky top-0 z-50 backdrop-blur-xl bg-background/95">
