@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Trash2, Mail, Phone, Plus } from "lucide-react";
+import { Trash2, Mail, Phone, Plus, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Contact {
@@ -224,24 +224,94 @@ export const ContactManagement = () => {
     );
   }
 
+  const handleSendAll = async () => {
+    setLoading(true);
+    try {
+      // Get all unsent tickets
+      const { data: tickets, error: ticketsError } = await supabase
+        .from("tickets")
+        .select("*")
+        .eq("auto_forwarded", false);
+
+      if (ticketsError) {
+        throw ticketsError;
+      }
+
+      if (!tickets || tickets.length === 0) {
+        toast({
+          title: "Info",
+          description: "Tidak ada tiket yang perlu dikirim",
+        });
+        setLoading(false);
+        return;
+      }
+
+      let successCount = 0;
+      let failCount = 0;
+
+      // Forward each ticket
+      for (const ticket of tickets) {
+        try {
+          const { error } = await supabase.functions.invoke("forward-ticket", {
+            body: { ticketId: ticket.id },
+          });
+
+          if (error) {
+            failCount++;
+          } else {
+            successCount++;
+          }
+        } catch (error) {
+          failCount++;
+        }
+      }
+
+      toast({
+        title: "Proses Selesai",
+        description: `${successCount} tiket berhasil dikirim, ${failCount} gagal`,
+        variant: successCount > 0 ? "default" : "destructive",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal mengirim tiket",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Auto Forward Toggle */}
       <Card className="p-6 bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-primary/20">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex-1">
             <h3 className="text-lg font-semibold text-foreground">
               Auto-Forward Keluhan
             </h3>
             <p className="text-sm text-muted-foreground">
-              Teruskan keluhan otomatis ke kontak terdaftar
+              {autoForwardEnabled 
+                ? "Tiket otomatis diteruskan ke kontak berdasarkan kategori"
+                : "Aktifkan untuk meneruskan tiket secara otomatis"}
             </p>
           </div>
-          <Switch
-            checked={autoForwardEnabled}
-            onCheckedChange={toggleAutoForward}
-            className="data-[state=checked]:bg-primary"
-          />
+          <div className="flex items-center gap-3">
+            <Switch
+              checked={autoForwardEnabled}
+              onCheckedChange={toggleAutoForward}
+              className="data-[state=checked]:bg-primary"
+            />
+            <Button
+              onClick={handleSendAll}
+              disabled={loading || !autoForwardEnabled}
+              className="gradient-primary text-white"
+            >
+              <Send className="mr-2 h-4 w-4" />
+              Kirim Semua
+            </Button>
+          </div>
         </div>
       </Card>
 
