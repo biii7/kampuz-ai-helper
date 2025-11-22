@@ -32,25 +32,29 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
 
   return (
     <Sidebar className={`${collapsed ? "w-16" : "w-64"} glass border-r border-border/50`} collapsible="icon">
-      <SidebarContent className="bg-transparent">
+      <SidebarContent className="bg-transparent pt-6">
         <SidebarGroup>
-          <SidebarGroupLabel className={`${collapsed ? "text-center px-0" : ""} text-xs uppercase tracking-wide text-muted-foreground`}>
-            {!collapsed && "Admin Menu"}
+          <SidebarGroupLabel className={`${collapsed ? "sr-only" : ""} text-xs uppercase tracking-wide text-muted-foreground px-4 mb-2`}>
+            Admin Menu
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className="space-y-1 px-2">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     onClick={() => onTabChange(item.id as any)}
                     isActive={activeTab === item.id}
+                    tooltip={collapsed ? item.label : undefined}
                     className={`
-                      ${activeTab === item.id ? "gradient-primary text-white shadow-lg" : "hover:bg-primary/10"}
-                      ${collapsed ? "justify-center" : ""}
-                      transition-all duration-200 rounded-xl
+                      ${activeTab === item.id 
+                        ? "gradient-primary text-white shadow-lg" 
+                        : "hover:bg-primary/10 text-foreground"
+                      }
+                      ${collapsed ? "justify-center px-2" : "px-4"}
+                      transition-all duration-200 rounded-xl h-11
                     `}
                   >
-                    <item.icon className={`h-4 w-4 ${collapsed ? "" : "mr-3"}`} />
+                    <item.icon className={`${collapsed ? "h-5 w-5" : "h-5 w-5 mr-3"} flex-shrink-0`} />
                     {!collapsed && <span className="font-medium">{item.label}</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
