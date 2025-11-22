@@ -26,7 +26,7 @@ export const ChatInterface = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "السلام عليكم ورحمة الله وبركاته 🌙\n\nSaya asisten AI kampus UIN Alauddin Makassar.\n\nSaya dapat membantu Anda dengan:\n✓ Menerima keluhan fasilitas, akademik, administrasi\n✓ Menjawab pertanyaan tentang kampus\n✓ Membuat tiket keluhan otomatis\n\nSilakan sampaikan keluhan atau pertanyaan Anda!"
+      content: "السلام عليكم ورحمة الله وبركاته 🌙\n\nSaya Single Gateway untuk keluhan dan informasi kampus UIN Alauddin Makassar.\n\n📌 Saya memberikan DUA jenis layanan:\n\n1️⃣ **Respons Instan (RAG)**\nJawaban cepat berdasarkan dokumen kampus resmi\n\n2️⃣ **Penerusan Keluhan Otomatis**\n• Ekstraksi Entitas Kunci (NER): NIM, lokasi, subjek\n• Tiket Keluhan Terstruktur\n• Forwarding otomatis ke pihak berwenang\n\nSilakan sampaikan keluhan atau pertanyaan Anda!"
     }
   ]);
   const [input, setInput] = useState("");

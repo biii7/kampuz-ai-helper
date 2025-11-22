@@ -14,7 +14,7 @@ export default function Footer() {
               className="h-20 w-auto object-contain"
             />
             <p className="text-sm text-muted-foreground text-center md:text-left">
-              Sistem Keluhan Kampus berbasis AI untuk melayani mahasiswa UIN Alauddin Makassar
+              Single Gateway & Sistem Triage Keluhan Otomatis berbasis AI untuk mahasiswa UIN Alauddin Makassar
             </p>
           </div>
 
@@ -41,7 +41,7 @@ export default function Footer() {
           <div className="flex flex-col items-center md:items-start space-y-3">
             <h3 className="font-semibold text-foreground mb-2">Tentang</h3>
             <p className="text-sm text-muted-foreground text-center md:text-left">
-              Sistem ini dikembangkan untuk memudahkan mahasiswa dalam menyampaikan keluhan dan pertanyaan seputar kampus.
+              Gerbang tunggal untuk keluhan kampus dengan Respons Instan (RAG) dan Penerusan Keluhan Otomatis ke pihak berwenang.
             </p>
             <p className="text-xs text-muted-foreground/70 text-center md:text-left">
               Universitas Islam Negeri Alauddin Makassar © {new Date().getFullYear()}

@@ -70,25 +70,25 @@ const Index = () => {
             </p>
 
             <p className="text-base md:text-lg text-muted-foreground/80 max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: '0.3s' }}>
-              Sistem AI-powered untuk mengelola keluhan dan pertanyaan mahasiswa dengan teknologi RAG, Intent Detection, dan Ekstraksi Entitas otomatis
+              <strong>Single Gateway & Sistem Triage Otomatis</strong> untuk mengelola keluhan mahasiswa dengan teknologi AI — memberikan Respons Instan (RAG) dan Penerusan Keluhan Otomatis
             </p>
 
             {/* Features */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 animate-fade-in" style={{ animationDelay: '0.4s' }}>
               <div className="glass-card p-6 hover:scale-105 transition-transform">
                 <Sparkles className="h-8 w-8 text-primary mx-auto mb-4" />
-                <h3 className="font-semibold text-lg mb-2">Intent Detection</h3>
-                <p className="text-sm text-muted-foreground">Deteksi otomatis keluhan atau informasi</p>
+                <h3 className="font-semibold text-lg mb-2">Respons Instan (RAG)</h3>
+                <p className="text-sm text-muted-foreground">Jawaban cepat berdasarkan dokumen kampus resmi</p>
               </div>
               <div className="glass-card p-6 hover:scale-105 transition-transform">
                 <Moon className="h-8 w-8 text-secondary mx-auto mb-4" />
-                <h3 className="font-semibold text-lg mb-2">RAG System</h3>
-                <p className="text-sm text-muted-foreground">Jawaban berdasarkan dokumen kampus</p>
+                <h3 className="font-semibold text-lg mb-2">Ekstraksi Entitas Kunci (NER)</h3>
+                <p className="text-sm text-muted-foreground">Ekstraksi otomatis NIM, lokasi, dan subjek keluhan</p>
               </div>
               <div className="glass-card p-6 hover:scale-105 transition-transform">
                 <Ticket className="h-8 w-8 text-accent mx-auto mb-4" />
-                <h3 className="font-semibold text-lg mb-2">Smart Ticketing</h3>
-                <p className="text-sm text-muted-foreground">Tiket terstruktur dengan ekstraksi NER</p>
+                <h3 className="font-semibold text-lg mb-2">Tiket Keluhan Terstruktur</h3>
+                <p className="text-sm text-muted-foreground">Penerusan otomatis ke pihak berwenang</p>
               </div>
             </div>
 
