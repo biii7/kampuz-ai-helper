@@ -26,7 +26,7 @@ export const ChatInterface = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "السلام عليكم ورحمة الله وبركاته 🌙\n\nSaya Single Gateway untuk keluhan dan informasi kampus UIN Alauddin Makassar.\n\n📌 Saya memberikan DUA jenis layanan:\n\n1️⃣ **Respons Instan (RAG)**\nJawaban cepat berdasarkan dokumen kampus resmi\n\n2️⃣ **Penerusan Keluhan Otomatis**\n• Ekstraksi Entitas Kunci (NER): NIM, lokasi, subjek\n• Tiket Keluhan Terstruktur\n• Forwarding otomatis ke pihak berwenang\n\nSilakan sampaikan keluhan atau pertanyaan Anda!"
+      content: "السلام عليكم ورحمة الله وبركاته 🌙\n\nبِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ\n\nAlhamdulillah, saya adalah Single Gateway Layanan Keluhan dan Informasi UIN Alauddin Makassar.\n\n🕌 **Melayani dengan Ihsan**\n\nInsyaAllah, saya hadir untuk membantu saudara/i dengan 2 (dua) jenis layanan:\n\n1️⃣ **Respons Instan (RAG)**\n   Menjawab pertanyaan seputar kampus berdasarkan dokumen resmi\n\n2️⃣ **Penerusan Keluhan Otomatis**\n   • Ekstraksi Entitas Kunci (NER): NIM, lokasi, subjek\n   • Tiket Keluhan Terstruktur\n   • Penerusan otomatis kepada pihak berwenang\n\nSilakan sampaikan keluhan atau pertanyaan Anda dengan penuh amanah. Jazākumullāhu khairan."
     }
   ]);
   const [input, setInput] = useState("");
