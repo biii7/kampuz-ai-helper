@@ -208,7 +208,14 @@ const Index = () => {
         {/* Main Content */}
         {view === "admin" && isAdmin ? (
           <div className="flex flex-1 w-full">
-            <AdminSidebar activeTab={adminTab} onTabChange={setAdminTab} />
+            <AdminSidebar 
+              activeTab={adminTab} 
+              onTabChange={setAdminTab}
+              onNavigate={(newView) => {
+                // Map history to tickets view
+                setView(newView === "history" ? "tickets" : newView);
+              }}
+            />
             <main className="flex-1 p-4 md:p-8">
               <AdminDashboard activeTab={adminTab} />
             </main>

@@ -1,4 +1,4 @@
-import { FileText, TrendingUp, BarChart3, Mail, Send, Settings, Users, Shield, LogOut, User } from "lucide-react";
+import { FileText, TrendingUp, BarChart3, Mail, Send, Settings, Users, Shield, LogOut, User, MessageSquare, History } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -19,35 +19,20 @@ import { supabase } from "@/integrations/supabase/client";
 interface AdminSidebarProps {
   activeTab: string;
   onTabChange: (tab: "tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins") => void;
+  onNavigate?: (view: "chat" | "history") => void;
 }
 
-// Group menu items by category
-const menuGroups = [
-  {
-    label: "Manajemen Tiket",
-    items: [
-      { id: "tickets", label: "Kelola Tiket", icon: FileText },
-      { id: "stats", label: "Statistik", icon: TrendingUp },
-      { id: "analytics", label: "Analitik", icon: BarChart3 },
-    ]
-  },
-  {
-    label: "Komunikasi",
-    items: [
-      { id: "templates", label: "Template Pesan", icon: Mail },
-      { id: "contacts", label: "Kontak", icon: Send },
-    ]
-  },
-  {
-    label: "Pengaturan Sistem",
-    items: [
-      { id: "api", label: "API Settings", icon: Settings },
-      { id: "admins", label: "Sub-Admin", icon: Users },
-    ]
-  }
+const menuItems = [
+  { id: "tickets", label: "Kelola Tiket", icon: FileText },
+  { id: "stats", label: "Statistik", icon: TrendingUp },
+  { id: "analytics", label: "Analitik", icon: BarChart3 },
+  { id: "templates", label: "Template Pesan", icon: Mail },
+  { id: "contacts", label: "Kontak", icon: Send },
+  { id: "api", label: "API Settings", icon: Settings },
+  { id: "admins", label: "Sub-Admin", icon: Users },
 ];
 
-export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
+export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSidebarProps) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
 
@@ -73,43 +58,70 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="bg-transparent">
-        {menuGroups.map((group, groupIndex) => (
-          <div key={group.label}>
-            <SidebarGroup>
-              <SidebarGroupLabel className={`${collapsed ? "sr-only" : ""} text-xs uppercase tracking-wide text-muted-foreground px-4 mb-2`}>
-                {group.label}
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu className="space-y-1 px-2">
-                  {group.items.map((item) => (
-                    <SidebarMenuItem key={item.id}>
-                      <SidebarMenuButton
-                        onClick={() => onTabChange(item.id as any)}
-                        isActive={activeTab === item.id}
-                        tooltip={collapsed ? item.label : undefined}
-                        className={`
-                          ${activeTab === item.id 
-                            ? "gradient-primary text-white shadow-lg" 
-                            : "hover:bg-primary/10 text-foreground"
-                          }
-                          ${collapsed ? "justify-center px-2" : "px-4"}
-                          transition-all duration-200 rounded-xl h-11
-                        `}
-                      >
-                        <item.icon className={`${collapsed ? "h-5 w-5" : "h-5 w-5 mr-3"} flex-shrink-0`} />
-                        {!collapsed && <span className="font-medium">{item.label}</span>}
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-            {groupIndex < menuGroups.length - 1 && (
-              <Separator className="my-4 mx-4" />
-            )}
-          </div>
-        ))}
+      <SidebarContent className="bg-transparent pt-4">
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu className="space-y-1 px-2">
+              {/* Navigation Items - Chat & History */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => onNavigate?.("chat")}
+                  tooltip={collapsed ? "Chat Bot" : undefined}
+                  className={`
+                    hover:bg-accent/10 text-foreground
+                    ${collapsed ? "justify-center px-2" : "px-4"}
+                    transition-all duration-200 rounded-xl h-11
+                  `}
+                >
+                  <MessageSquare className={`${collapsed ? "h-5 w-5" : "h-5 w-5 mr-3"} flex-shrink-0`} />
+                  {!collapsed && <span className="font-medium">Chat Bot</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => onNavigate?.("history")}
+                  tooltip={collapsed ? "Riwayat Tiket" : undefined}
+                  className={`
+                    hover:bg-accent/10 text-foreground
+                    ${collapsed ? "justify-center px-2" : "px-4"}
+                    transition-all duration-200 rounded-xl h-11
+                  `}
+                >
+                  <History className={`${collapsed ? "h-5 w-5" : "h-5 w-5 mr-3"} flex-shrink-0`} />
+                  {!collapsed && <span className="font-medium">Riwayat Tiket</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* Separator */}
+              <div className="my-2">
+                <Separator />
+              </div>
+
+              {/* Admin Menu Items */}
+              {menuItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    onClick={() => onTabChange(item.id as any)}
+                    isActive={activeTab === item.id}
+                    tooltip={collapsed ? item.label : undefined}
+                    className={`
+                      ${activeTab === item.id 
+                        ? "gradient-primary text-white shadow-lg" 
+                        : "hover:bg-primary/10 text-foreground"
+                      }
+                      ${collapsed ? "justify-center px-2" : "px-4"}
+                      transition-all duration-200 rounded-xl h-11
+                    `}
+                  >
+                    <item.icon className={`${collapsed ? "h-5 w-5" : "h-5 w-5 mr-3"} flex-shrink-0`} />
+                    {!collapsed && <span className="font-medium">{item.label}</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
       {/* User Footer */}
