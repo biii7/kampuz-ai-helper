@@ -86,8 +86,14 @@ export const ContactManagement = () => {
   const toggleAutoForward = async (enabled: boolean) => {
     const { error } = await supabase
       .from("system_settings")
-      .update({ setting_value: enabled.toString(), updated_at: new Date().toISOString() })
-      .eq("setting_key", "auto_forward_enabled");
+      .upsert(
+        {
+          setting_key: "auto_forward_enabled",
+          setting_value: enabled.toString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "setting_key" }
+      );
 
     if (error) {
       toast({
