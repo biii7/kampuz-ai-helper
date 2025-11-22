@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { NotificationBell } from "@/components/NotificationBell";
+import Footer from "@/components/Footer";
+import uinLogo from "@/assets/uin-logo.png";
 
 const Index = () => {
   const [view, setView] = useState<"hero" | "chat" | "tickets" | "admin">("hero");
@@ -46,11 +48,13 @@ const Index = () => {
 
         <main className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-16">
           <div className="text-center space-y-8 max-w-4xl animate-fade-in">
-            {/* Icon */}
+            {/* Logo */}
             <div className="flex justify-center mb-8">
-              <div className="glass-card p-6 glow-primary">
-                <GraduationCap className="h-16 w-16 text-primary" />
-              </div>
+              <img 
+                src={uinLogo} 
+                alt="UIN Alauddin Makassar" 
+                className="h-32 md:h-40 w-auto object-contain animate-float"
+              />
             </div>
 
             {/* Title */}
@@ -110,6 +114,7 @@ const Index = () => {
             </div>
           </div>
         </main>
+        <Footer />
       </div>
     );
   }
@@ -140,9 +145,11 @@ const Index = () => {
                     onClick={() => setView("hero")}
                     className="flex items-center gap-2 hover:opacity-80 transition-opacity min-w-0"
                   >
-                    <div className="glass-card p-1.5 flex-shrink-0">
-                      <GraduationCap className="h-5 w-5 text-primary" />
-                    </div>
+                    <img 
+                      src={uinLogo} 
+                      alt="UIN Alauddin" 
+                      className="h-10 w-auto object-contain flex-shrink-0"
+                    />
                     <div className="text-left min-w-0 hidden sm:block">
                       <h1 className="text-sm font-bold gradient-text truncate">Sistem Keluhan Kampus</h1>
                       <p className="text-xs text-muted-foreground truncate">UIN Alauddin Makassar</p>
@@ -254,6 +261,7 @@ const Index = () => {
               </div>
             )}
           </main>
+          <Footer />
         </div>
       </div>
     </SidebarProvider>
