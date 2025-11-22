@@ -225,21 +225,21 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
     <div className="space-y-6">
       {activeTab === "tickets" && (
         <>
-          <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Kelola Tiket</h1>
-              <p className="text-muted-foreground mt-1">
-                Kelola dan teruskan tiket keluhan ke pihak berwenang
-              </p>
+          {/* Sticky Page Header */}
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/50 -mx-6 md:-mx-8 px-6 md:px-8 py-4 mb-6">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Kelola Tiket</h1>
+                <p className="text-muted-foreground mt-1">
+                  Kelola dan teruskan tiket keluhan ke pihak berwenang
+                </p>
+              </div>
+              {!hideNotification && <NotificationBell />}
             </div>
-            {!hideNotification && <NotificationBell />}
           </div>
           
           {isLoading ? (
             <div className="glass-card max-w-7xl mx-auto overflow-hidden card-elevated">
-              <div className="gradient-primary p-6">
-                <Skeleton className="h-8 w-64 bg-white/20" />
-              </div>
               <div className="p-6 space-y-6">
                 {[1, 2, 3].map((i) => (
                   <Skeleton key={i} className="h-32 w-full" />
@@ -248,28 +248,10 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
             </div>
           ) : (
             <div className="glass-card max-w-7xl mx-auto overflow-hidden card-elevated">
-              {/* Header */}
-              <div className="gradient-primary p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <Shield className="h-8 w-8 text-white" />
-                      <h2 className="text-2xl font-bold text-white">Kelola Tiket</h2>
-                    </div>
-                    <p className="text-white/80 text-sm">
-                      Teruskan tiket keluhan ke pihak berwenang
-                    </p>
-                  </div>
-                  <div className="glass-card px-4 py-2 rounded-full">
-                    <span className="text-white font-bold">{filteredTickets.length} Tiket</span>
-                  </div>
-                </div>
-              </div>
-
               {/* Search and Filter */}
               <div className="p-6 space-y-4 border-b border-border/30">
-                <div className="flex gap-3 items-center">
-                  <div className="relative flex-1">
+                <div className="flex gap-3 items-center flex-wrap">
+                  <div className="relative flex-1 min-w-[200px]">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input
                       placeholder="Cari tiket..."
@@ -277,6 +259,9 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="pl-10 glass border-border/50"
                     />
+                  </div>
+                  <div className="glass-card px-4 py-2 rounded-full">
+                    <span className="text-foreground font-bold">{filteredTickets.length} Tiket</span>
                   </div>
                   <Button
                     onClick={handleBulkForward}
@@ -423,7 +408,7 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
 
       {activeTab === "stats" && (
         <>
-          <div className="mb-6">
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/50 -mx-6 md:-mx-8 px-6 md:px-8 py-4 mb-6">
             <h1 className="text-3xl font-bold text-foreground">Statistik Pengaduan</h1>
             <p className="text-muted-foreground mt-1">
               Lihat performa sistem penerusan otomatis
@@ -435,7 +420,7 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
       
       {activeTab === "analytics" && (
         <>
-          <div className="mb-6">
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/50 -mx-6 md:-mx-8 px-6 md:px-8 py-4 mb-6">
             <h1 className="text-3xl font-bold text-foreground">Analitik Dashboard</h1>
             <p className="text-muted-foreground mt-1">
               Dashboard analitik keluhan kampus
@@ -447,7 +432,7 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
       
       {activeTab === "templates" && (
         <>
-          <div className="mb-6">
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/50 -mx-6 md:-mx-8 px-6 md:px-8 py-4 mb-6">
             <h1 className="text-3xl font-bold text-foreground">Template Pesan</h1>
             <p className="text-muted-foreground mt-1">
               Kelola template untuk email dan WhatsApp otomatis
@@ -459,7 +444,7 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
       
       {activeTab === "contacts" && (
         <>
-          <div className="mb-6">
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/50 -mx-6 md:-mx-8 px-6 md:px-8 py-4 mb-6">
             <h1 className="text-3xl font-bold text-foreground">Manajemen Kontak</h1>
             <p className="text-muted-foreground mt-1">
               Kelola kontak pihak berwenang untuk auto-forward tiket
@@ -471,7 +456,7 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
       
       {activeTab === "api" && (
         <>
-          <div className="mb-6">
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/50 -mx-6 md:-mx-8 px-6 md:px-8 py-4 mb-6">
             <h1 className="text-3xl font-bold text-foreground">Pengaturan API</h1>
             <p className="text-muted-foreground mt-1">
               Konfigurasi API keys untuk integrasi eksternal
@@ -483,7 +468,7 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
       
       {activeTab === "admins" && (
         <>
-          <div className="mb-6">
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/50 -mx-6 md:-mx-8 px-6 md:px-8 py-4 mb-6">
             <h1 className="text-3xl font-bold text-foreground">Manajemen Sub-Admin</h1>
             <p className="text-muted-foreground mt-1">
               Kelola akses dan permission admin sistem
