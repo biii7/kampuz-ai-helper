@@ -222,18 +222,18 @@ export const AdminDashboard = ({ activeTab }: AdminDashboardProps) => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-xl md:text-3xl font-bold gradient-text">Dashboard Admin</h1>
-          <p className="text-[10px] md:text-sm text-muted-foreground mt-0.5 md:mt-1">
-            Kelola tiket keluhan dan sistem penerusan otomatis
-          </p>
-        </div>
-        <NotificationBell />
-      </div>
-
       {activeTab === "tickets" && (
         <>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold gradient-text">Kelola Tiket</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Teruskan tiket keluhan ke pihak berwenang
+              </p>
+            </div>
+            <NotificationBell />
+          </div>
+          
           {isLoading ? (
             <div className="glass-card max-w-7xl mx-auto overflow-hidden card-elevated">
               <div className="gradient-primary p-6">
@@ -420,12 +420,77 @@ export const AdminDashboard = ({ activeTab }: AdminDashboardProps) => {
         </>
       )}
 
-      {activeTab === "stats" && <ForwardingStats />}
-      {activeTab === "analytics" && <AdminAnalytics />}
-      {activeTab === "templates" && <MessageTemplates />}
-      {activeTab === "contacts" && <ContactManagement />}
-      {activeTab === "api" && <ApiSettings />}
-      {activeTab === "admins" && <SubAdminManagement />}
+      {activeTab === "stats" && (
+        <>
+          <div className="mb-6">
+            <h1 className="text-2xl md:text-3xl font-bold gradient-text">Statistik</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Lihat performa sistem penerusan otomatis
+            </p>
+          </div>
+          <ForwardingStats />
+        </>
+      )}
+      
+      {activeTab === "analytics" && (
+        <>
+          <div className="mb-6">
+            <h1 className="text-2xl md:text-3xl font-bold gradient-text">Analitik</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Dashboard analitik keluhan kampus
+            </p>
+          </div>
+          <AdminAnalytics />
+        </>
+      )}
+      
+      {activeTab === "templates" && (
+        <>
+          <div className="mb-6">
+            <h1 className="text-2xl md:text-3xl font-bold gradient-text">Template Pesan</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Kelola template untuk email dan WhatsApp
+            </p>
+          </div>
+          <MessageTemplates />
+        </>
+      )}
+      
+      {activeTab === "contacts" && (
+        <>
+          <div className="mb-6">
+            <h1 className="text-2xl md:text-3xl font-bold gradient-text">Kontak Penerusan</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Kelola kontak untuk auto-forward tiket
+            </p>
+          </div>
+          <ContactManagement />
+        </>
+      )}
+      
+      {activeTab === "api" && (
+        <>
+          <div className="mb-6">
+            <h1 className="text-2xl md:text-3xl font-bold gradient-text">API Settings</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Konfigurasi API keys untuk integrasi
+            </p>
+          </div>
+          <ApiSettings />
+        </>
+      )}
+      
+      {activeTab === "admins" && (
+        <>
+          <div className="mb-6">
+            <h1 className="text-2xl md:text-3xl font-bold gradient-text">Manajemen Admin</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Kelola sub-admin dan permissions
+            </p>
+          </div>
+          <SubAdminManagement />
+        </>
+      )}
     </div>
   );
 };

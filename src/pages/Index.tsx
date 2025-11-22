@@ -5,6 +5,8 @@ import { TicketHistory } from "@/components/TicketHistory";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { GraduationCap, MessageSquare, Ticket, Sparkles, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AdminSidebar } from "@/components/AdminSidebar";
 
 const Index = () => {
   const [view, setView] = useState<"hero" | "chat" | "tickets" | "admin">("hero");
@@ -117,6 +119,11 @@ const Index = () => {
       <header className="glass border-b border-border/50 sticky top-0 z-50 backdrop-blur-xl bg-background/95">
         <div className="container mx-auto px-3 md:px-4 py-2 md:py-3">
           <div className="flex items-center justify-between gap-2">
+            {/* Sidebar Trigger for Admin View */}
+            {view === "admin" && isAdmin && (
+              <SidebarTrigger className="mr-2" />
+            )}
+            
             <button
               onClick={() => setView("hero")}
               className="flex items-center gap-1.5 md:gap-2 hover:opacity-80 transition-opacity min-w-0"
@@ -151,69 +158,6 @@ const Index = () => {
                   >
                     <Ticket className="h-3 w-3 md:h-4 md:w-4" />
                     <span className="hidden sm:inline ml-1 md:ml-2">Tiket</span>
-                  </Button>
-                </>
-              )}
-              
-              {/* Show admin tabs navigation when in admin view */}
-              {isAdmin && view === "admin" && (
-                <>
-                  <Button
-                    variant={adminTab === "tickets" ? "default" : "ghost"}
-                    className={`${adminTab === "tickets" ? "gradient-primary" : "glass"} h-8 md:h-9 text-xs md:text-sm px-2 md:px-3`}
-                    onClick={() => setAdminTab("tickets")}
-                    size="sm"
-                  >
-                    <Ticket className="h-3 w-3 md:h-4 md:w-4" />
-                    <span className="hidden sm:inline ml-1 md:ml-2">Tiket</span>
-                  </Button>
-                  <Button
-                    variant={adminTab === "stats" ? "default" : "ghost"}
-                    className={`${adminTab === "stats" ? "gradient-primary" : "glass"} h-8 md:h-9 text-xs md:text-sm px-2 md:px-3`}
-                    onClick={() => setAdminTab("stats")}
-                    size="sm"
-                  >
-                    <span className="hidden sm:inline ml-1 md:ml-2">Stat</span>
-                  </Button>
-                  <Button
-                    variant={adminTab === "analytics" ? "default" : "ghost"}
-                    className={`${adminTab === "analytics" ? "gradient-primary" : "glass"} h-8 md:h-9 text-xs md:text-sm px-2 md:px-3`}
-                    onClick={() => setAdminTab("analytics")}
-                    size="sm"
-                  >
-                    <span className="hidden sm:inline ml-1 md:ml-2">Chart</span>
-                  </Button>
-                  <Button
-                    variant={adminTab === "templates" ? "default" : "ghost"}
-                    className={`${adminTab === "templates" ? "gradient-primary" : "glass"} h-8 md:h-9 text-xs md:text-sm px-2 md:px-3`}
-                    onClick={() => setAdminTab("templates")}
-                    size="sm"
-                  >
-                    <span className="hidden sm:inline ml-1 md:ml-2">Template</span>
-                  </Button>
-                  <Button
-                    variant={adminTab === "contacts" ? "default" : "ghost"}
-                    className={`${adminTab === "contacts" ? "gradient-primary" : "glass"} h-8 md:h-9 text-xs md:text-sm px-2 md:px-3`}
-                    onClick={() => setAdminTab("contacts")}
-                    size="sm"
-                  >
-                    <span className="hidden sm:inline ml-1 md:ml-2">Kontak</span>
-                  </Button>
-                  <Button
-                    variant={adminTab === "api" ? "default" : "ghost"}
-                    className={`${adminTab === "api" ? "gradient-primary" : "glass"} h-8 md:h-9 text-xs md:text-sm px-2 md:px-3`}
-                    onClick={() => setAdminTab("api")}
-                    size="sm"
-                  >
-                    <span className="hidden sm:inline ml-1 md:ml-2">API</span>
-                  </Button>
-                  <Button
-                    variant={adminTab === "admins" ? "default" : "ghost"}
-                    className={`${adminTab === "admins" ? "gradient-primary" : "glass"} h-8 md:h-9 text-xs md:text-sm px-2 md:px-3`}
-                    onClick={() => setAdminTab("admins")}
-                    size="sm"
-                  >
-                    <span className="hidden sm:inline ml-1 md:ml-2">Admin</span>
                   </Button>
                 </>
               )}
@@ -261,13 +205,23 @@ const Index = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="animate-fade-in">
-          {view === "chat" && <ChatInterface />}
-          {view === "tickets" && <TicketHistory />}
-          {view === "admin" && isAdmin && <AdminDashboard activeTab={adminTab} />}
-        </div>
-      </main>
+      {view === "admin" && isAdmin ? (
+        <SidebarProvider>
+          <div className="flex min-h-[calc(100vh-64px)] w-full">
+            <AdminSidebar activeTab={adminTab} onTabChange={setAdminTab} />
+            <main className="flex-1 p-4 md:p-8">
+              <AdminDashboard activeTab={adminTab} />
+            </main>
+          </div>
+        </SidebarProvider>
+      ) : (
+        <main className="container mx-auto px-4 py-8">
+          <div className="animate-fade-in">
+            {view === "chat" && <ChatInterface />}
+            {view === "tickets" && <TicketHistory />}
+          </div>
+        </main>
+      )}
     </div>
   );
 };
