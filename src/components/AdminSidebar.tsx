@@ -66,33 +66,33 @@ export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSideba
         collapsible="icon"
       >
         {/* Logo/Brand Header */}
-        <SidebarHeader className="border-b border-border/50 p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="glass-card p-2 gradient-primary rounded-xl flex-shrink-0">
-                <Shield className="h-6 w-6 text-white" />
-              </div>
-              {!collapsed && (
-                <div className="flex flex-col min-w-0">
-                  <span className="font-bold text-foreground text-base truncate">Admin Panel</span>
-                  <span className="text-xs text-muted-foreground truncate">Sistem Keluhan</span>
-                </div>
-              )}
+      <SidebarHeader className="border-b border-border/50 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className={`glass-card gradient-primary rounded-xl flex-shrink-0 ${collapsed ? "p-2" : "p-2"}`}>
+              <Shield className="h-6 w-6 text-white" />
             </div>
-            
-            {/* Close button for mobile */}
-            {isMobile && !collapsed && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setOpen(false)}
-                className="flex-shrink-0 h-8 w-8"
-              >
-                <X className="h-5 w-5" />
-              </Button>
+            {!collapsed && (
+              <div className="flex flex-col min-w-0">
+                <span className="font-bold text-foreground text-base truncate">Admin Panel</span>
+                <span className="text-xs text-muted-foreground truncate">Sistem Keluhan</span>
+              </div>
             )}
           </div>
-        </SidebarHeader>
+          
+          {/* Close button for mobile */}
+          {isMobile && !collapsed && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setOpen(false)}
+              className="flex-shrink-0 h-8 w-8"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          )}
+        </div>
+      </SidebarHeader>
 
       <SidebarContent className="bg-transparent">
         <SidebarGroup>
