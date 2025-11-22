@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ChatInterface } from "@/components/ChatInterface";
 import { TicketHistory } from "@/components/TicketHistory";
 import { AdminDashboard } from "@/components/AdminDashboard";
-import { GraduationCap, MessageSquare, Ticket, Sparkles, Shield } from "lucide-react";
+import { GraduationCap, MessageSquare, Ticket, Sparkles, Shield, Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
@@ -210,17 +210,39 @@ const Index = () => {
             </header>
           )}
 
-          {/* Fixed Notification Bell for Admin View */}
+          {/* Mobile Menu Toggle & Fixed Notification for Admin View */}
           {view === "admin" && isAdmin && (
-            <div className="fixed top-4 right-4 z-50">
-              <NotificationBell />
-            </div>
+            <>
+              {/* Mobile Menu Button */}
+              <div className="lg:hidden fixed top-4 left-4 z-40">
+                <SidebarTrigger>
+                  <Button
+                    variant="default"
+                    size="icon"
+                    className="gradient-primary shadow-lg"
+                  >
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SidebarTrigger>
+              </div>
+              
+              {/* Desktop Toggle & Notification */}
+              <div className="hidden lg:flex fixed top-4 right-4 z-40 gap-2 items-center">
+                <SidebarTrigger />
+                <NotificationBell />
+              </div>
+              
+              {/* Mobile Notification Only */}
+              <div className="lg:hidden fixed top-4 right-4 z-40">
+                <NotificationBell />
+              </div>
+            </>
           )}
 
           {/* Main Content */}
           <main className="flex-1 overflow-auto">
             {view === "admin" && isAdmin ? (
-              <div className="p-6 md:p-8">
+              <div className="p-6 md:p-8 pt-16 lg:pt-8">
                 <AdminDashboard activeTab={adminTab} hideNotification={true} />
               </div>
             ) : (
