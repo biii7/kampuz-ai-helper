@@ -15,6 +15,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import uinLogo from "@/assets/uin-logo.png";
 
 interface AdminSidebarProps {
   activeTab: string;
@@ -68,21 +69,25 @@ export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSideba
         {/* Logo/Brand Header */}
       <SidebarHeader className="border-b border-border/50 p-3">
         {collapsed ? (
-          /* Collapsed State - Centered Icon Only */
+          /* Collapsed State - Centered Logo Only */
           <div className="flex items-center justify-center w-full">
-            <div className="glass-card gradient-primary rounded-lg p-2">
-              <Shield className="h-4 w-4 text-white" />
-            </div>
+            <img 
+              src={uinLogo} 
+              alt="UIN" 
+              className="h-10 w-auto object-contain"
+            />
           </div>
         ) : (
           /* Expanded State - Full Header */
           <div className="flex items-center gap-3 w-full">
-            <div className="glass-card gradient-primary rounded-xl flex-shrink-0 p-2.5">
-              <Shield className="h-5 w-5 text-white" />
-            </div>
+            <img 
+              src={uinLogo} 
+              alt="UIN Alauddin" 
+              className="h-12 w-auto object-contain flex-shrink-0"
+            />
             <div className="flex flex-col min-w-0 flex-1">
               <span className="font-bold text-foreground text-sm truncate">Admin Panel</span>
-              <span className="text-xs text-muted-foreground truncate">Sistem Keluhan</span>
+              <span className="text-xs text-muted-foreground truncate">UIN Alauddin</span>
             </div>
             
             {/* Close button for mobile */}

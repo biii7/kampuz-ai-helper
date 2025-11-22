@@ -7,6 +7,7 @@ import { Shield, Lock, Mail, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
+import uinLogo from "@/assets/uin-logo.png";
 
 const loginSchema = z.object({
   email: z.string().email("Email tidak valid"),
@@ -113,14 +114,16 @@ export default function AdminAuth() {
         <div className="glass-card p-8 card-elevated animate-scale-in">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <div className="glass-card p-4 glow-primary">
-                <Shield className="h-12 w-12 text-primary" />
-              </div>
+            <div className="flex justify-center mb-6">
+              <img 
+                src={uinLogo} 
+                alt="UIN Alauddin Makassar" 
+                className="h-24 w-auto object-contain"
+              />
             </div>
             <h1 className="text-3xl font-bold gradient-text mb-2">Admin Login</h1>
             <p className="text-muted-foreground">
-              Sistem Keluhan Kampus UIN Alauddin
+              Sistem Keluhan Kampus UIN Alauddin Makassar
             </p>
           </div>
 
