@@ -38,6 +38,7 @@ export const ContactManagement = () => {
   const [autoForwardEnabled, setAutoForwardEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const { toast } = useToast();
 
   const [newContact, setNewContact] = useState({
@@ -227,11 +228,18 @@ export const ContactManagement = () => {
   const handleSendAll = async () => {
     setLoading(true);
     try {
-      // Get all unsent tickets
-      const { data: tickets, error: ticketsError } = await supabase
+      // Build query based on selected category
+      let query = supabase
         .from("tickets")
         .select("*")
         .eq("auto_forwarded", false);
+      
+      // Apply category filter if not "all"
+      if (selectedCategory !== "all") {
+        query = query.eq("kategori", selectedCategory);
+      }
+
+      const { data: tickets, error: ticketsError } = await query;
 
       if (ticketsError) {
         throw ticketsError;
@@ -240,7 +248,9 @@ export const ContactManagement = () => {
       if (!tickets || tickets.length === 0) {
         toast({
           title: "Info",
-          description: "Tidak ada tiket yang perlu dikirim",
+          description: selectedCategory === "all" 
+            ? "Tidak ada tiket yang perlu dikirim" 
+            : `Tidak ada tiket kategori "${selectedCategory}" yang perlu dikirim`,
         });
         setLoading(false);
         return;
@@ -268,7 +278,9 @@ export const ContactManagement = () => {
 
       toast({
         title: "Proses Selesai",
-        description: `${successCount} tiket berhasil dikirim, ${failCount} gagal`,
+        description: selectedCategory === "all"
+          ? `${successCount} tiket berhasil dikirim, ${failCount} gagal`
+          : `${successCount} tiket kategori "${selectedCategory}" berhasil dikirim, ${failCount} gagal`,
         variant: successCount > 0 ? "default" : "destructive",
       });
     } catch (error) {
@@ -284,27 +296,63 @@ export const ContactManagement = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Auto Forward Toggle - Simplified */}
+      {/* Auto Forward Toggle & Bulk Send - Simplified */}
       <Card className="p-4 bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-primary/20 sticky top-16 z-20 backdrop-blur-xl bg-background/95">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 flex-1">
-            <div className={`p-2 rounded-lg transition-colors ${autoForwardEnabled ? 'bg-primary/20' : 'bg-muted'}`}>
-              <Send className={`h-5 w-5 ${autoForwardEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
+        <div className="space-y-4">
+          {/* Auto Forward Toggle */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 flex-1">
+              <div className={`p-2 rounded-lg transition-colors ${autoForwardEnabled ? 'bg-primary/20' : 'bg-muted'}`}>
+                <Send className={`h-5 w-5 ${autoForwardEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-foreground">
+                  Mode Auto-Forward
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {autoForwardEnabled ? "Aktif - Tiket otomatis diteruskan" : "Nonaktif - Forwarding manual"}
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-base font-semibold text-foreground">
-                Mode Auto-Forward
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                {autoForwardEnabled ? "Aktif - Tiket otomatis diteruskan" : "Nonaktif - Forwarding manual"}
-              </p>
+            <Switch
+              checked={autoForwardEnabled}
+              onCheckedChange={toggleAutoForward}
+              className="data-[state=checked]:bg-primary"
+            />
+          </div>
+
+          {/* Bulk Forward Section */}
+          <div className="pt-3 border-t border-border/50">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex-1 min-w-[200px]">
+                <Label htmlFor="bulk-category" className="text-xs text-muted-foreground mb-1.5 block">
+                  Kirim Tiket per Kategori
+                </Label>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger id="bulk-category" className="h-9 border-primary/30">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Kategori</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                onClick={handleSendAll}
+                disabled={loading}
+                className="gradient-primary text-white h-9 mt-5"
+                size="sm"
+              >
+                <Send className="mr-2 h-4 w-4" />
+                Kirim {selectedCategory === "all" ? "Semua" : selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}
+              </Button>
             </div>
           </div>
-          <Switch
-            checked={autoForwardEnabled}
-            onCheckedChange={toggleAutoForward}
-            className="data-[state=checked]:bg-primary"
-          />
         </div>
       </Card>
 
