@@ -104,19 +104,6 @@ const Index = () => {
                 Lihat Riwayat Tiket
               </Button>
             </div>
-
-            {/* Admin Login Link */}
-            {!isAdmin && (
-              <div className="mt-8 animate-fade-in" style={{ animationDelay: '0.6s' }}>
-                <a
-                  href="/admin"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-2"
-                >
-                  <Shield className="h-4 w-4" />
-                  Login Admin
-                </a>
-              </div>
-            )}
           </div>
         </main>
       </div>
@@ -142,7 +129,7 @@ const Index = () => {
               </div>
             </button>
 
-            <div className="flex gap-1 flex-shrink-0">
+            <nav className="flex gap-1 flex-shrink-0">
               <Button
                 variant={view === "chat" ? "default" : "ghost"}
                 className={`${view === "chat" ? "gradient-primary" : "glass"} h-8 md:h-9 text-xs md:text-sm px-2 md:px-3`}
@@ -161,7 +148,8 @@ const Index = () => {
                 <Ticket className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline ml-1 md:ml-2">Tiket</span>
               </Button>
-              {isAdmin && (
+              
+              {isAdmin ? (
                 <>
                   <Button
                     variant={view === "admin" ? "default" : "ghost"}
@@ -184,8 +172,18 @@ const Index = () => {
                     <span className="text-xs">Keluar</span>
                   </Button>
                 </>
+              ) : (
+                <Button
+                  variant="ghost"
+                  className="glass h-8 md:h-9 text-xs md:text-sm px-2 md:px-3"
+                  onClick={() => window.location.href = "/admin"}
+                  size="sm"
+                >
+                  <Shield className="h-3 w-3 md:h-4 md:w-4" />
+                  <span className="hidden sm:inline ml-1 md:ml-2">Login</span>
+                </Button>
               )}
-            </div>
+            </nav>
           </div>
         </div>
       </header>
