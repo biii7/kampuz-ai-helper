@@ -75,10 +75,12 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [forwardingContacts, setForwardingContacts] = useState<ForwardingContact[]>([]);
   const [isBulkForwarding, setIsBulkForwarding] = useState(false);
+  const [autoForwardEnabled, setAutoForwardEnabled] = useState(false);
 
   useEffect(() => {
     loadTickets();
     loadForwardingContacts();
+    loadAutoForwardSetting();
 
     // Set up realtime subscription for new tickets
     const channel: RealtimeChannel = supabase
@@ -137,6 +139,46 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
     }
   };
 
+  const loadAutoForwardSetting = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("system_settings")
+        .select("setting_value")
+        .eq("setting_key", "auto_forward_enabled")
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data) {
+        setAutoForwardEnabled(data.setting_value === "true");
+      }
+    } catch (error) {
+      console.error("Error loading auto-forward setting:", error);
+    }
+  };
+
+  const toggleGlobalAutoForward = async (enabled: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("system_settings")
+        .upsert(
+          {
+            setting_key: "auto_forward_enabled",
+            setting_value: enabled.toString(),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "setting_key" }
+        );
+
+      if (error) throw error;
+
+      setAutoForwardEnabled(enabled);
+      toast.success(enabled ? "Auto-forward global diaktifkan" : "Auto-forward global dinonaktifkan");
+    } catch (error) {
+      console.error("Error updating auto-forward setting:", error);
+      toast.error("Gagal mengubah pengaturan auto-forward");
+    }
+  };
+
   const toggleAutoForward = async (ticketId: string, currentValue: boolean | null) => {
     try {
       const { error } = await supabase
@@ -152,10 +194,6 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
       console.error("Error toggling auto-forward:", error);
       toast.error("Gagal mengubah status auto-forward");
     }
-  };
-
-  const getSuggestedContacts = (category: string) => {
-    return forwardingContacts.filter(contact => contact.category === category);
   };
 
   const handleBulkForward = async () => {
@@ -210,6 +248,26 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
     }
   };
 
+  const handleManualForward = async (ticket: Ticket) => {
+    try {
+      const { error } = await supabase.functions.invoke('forward-ticket', {
+        body: { ticketId: ticket.id }
+      });
+
+      if (error) throw error;
+
+      toast.success("Tiket berhasil dikirim ke kontak kategori ini");
+      loadTickets();
+    } catch (error) {
+      console.error("Error manual forward:", error);
+      toast.error("Gagal mengirim tiket");
+    }
+  };
+
+  const getSuggestedContacts = (category: string) => {
+    return forwardingContacts.filter(contact => contact.category === category);
+  };
+
   const filteredTickets = tickets.filter((ticket) => {
     const matchesSearch =
       ticket.subjek.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -234,7 +292,23 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
                   Kelola dan teruskan tiket keluhan ke pihak berwenang
                 </p>
               </div>
-              {!hideNotification && <NotificationBell />}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 glass-card px-4 py-2 rounded-full">
+                  <Send className="h-4 w-4 text-primary" />
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">Auto-Forward</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {autoForwardEnabled ? "Aktif (otomatis)" : "Nonaktif (manual)"}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={autoForwardEnabled}
+                    onCheckedChange={toggleGlobalAutoForward}
+                    className="data-[state=checked]:bg-primary"
+                  />
+                </div>
+                {!hideNotification && <NotificationBell />}
+              </div>
             </div>
           </div>
           
@@ -263,13 +337,15 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
                   <div className="glass-card px-4 py-2 rounded-full">
                     <span className="text-foreground font-bold">{filteredTickets.length} Tiket</span>
                   </div>
-                  <Button
-                    onClick={handleBulkForward}
-                    disabled={isBulkForwarding || tickets.filter(t => !t.auto_forwarded).length === 0}
-                    className="gradient-primary shrink-0"
-                  >
-                    {isBulkForwarding ? "Mengirim..." : `Kirim Semua (${tickets.filter(t => !t.auto_forwarded).length})`}
-                  </Button>
+                  {autoForwardEnabled && (
+                    <Button
+                      onClick={handleBulkForward}
+                      disabled={isBulkForwarding || tickets.filter(t => !t.auto_forwarded).length === 0}
+                      className="gradient-primary shrink-0"
+                    >
+                      {isBulkForwarding ? "Mengirim..." : `Kirim Semua (${tickets.filter(t => !t.auto_forwarded).length})`}
+                    </Button>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -354,28 +430,63 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
                               </div>
                             </div>
 
-                            {/* Auto-forward toggle */}
+                            {/* Auto-forward / Manual forwarding */}
                             <div className="mt-4">
-                              <div className="flex items-center justify-between p-4 glass-card rounded-xl">
-                                <div className="flex items-center gap-3">
-                                  <Send className="h-5 w-5 text-primary" />
-                                  <div>
-                                    <p className="text-sm font-semibold text-foreground">
-                                      Auto-Forward
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {ticket.auto_forwarded ? "Aktif - Akan diteruskan otomatis" : "Nonaktif"}
-                                    </p>
+                              {/* Auto mode: show toggle only jika setting global AKTIF & ada kontak aktif untuk kategori ini */}
+                              {autoForwardEnabled && getSuggestedContacts(ticket.kategori).length > 0 && (
+                                <div className="flex items-center justify-between p-4 glass-card rounded-xl">
+                                  <div className="flex items-center gap-3">
+                                    <Send className="h-5 w-5 text-primary" />
+                                    <div>
+                                      <p className="text-sm font-semibold text-foreground">
+                                        Auto-Forward
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {ticket.auto_forwarded ? "Aktif - Akan diteruskan otomatis" : "Nonaktif"}
+                                      </p>
+                                    </div>
                                   </div>
+                                  <Switch
+                                    checked={ticket.auto_forwarded || false}
+                                    onCheckedChange={() => toggleAutoForward(ticket.id, ticket.auto_forwarded)}
+                                  />
                                 </div>
-                                <Switch
-                                  checked={ticket.auto_forwarded || false}
-                                  onCheckedChange={() => toggleAutoForward(ticket.id, ticket.auto_forwarded)}
-                                />
-                              </div>
+                              )}
 
-                              {/* Suggested contacts if auto-forward is active */}
-                              {ticket.auto_forwarded && getSuggestedContacts(ticket.kategori).length > 0 && (
+                              {/* Manual mode: jika setting global NON AKTIF */}
+                              {!autoForwardEnabled && (
+                                <div className="mt-3 p-4 glass-card rounded-xl space-y-3">
+                                  <div className="flex items-center gap-3">
+                                    <Send className="h-5 w-5 text-primary" />
+                                    <div>
+                                      <p className="text-sm font-semibold text-foreground">Kirim Manual</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {getSuggestedContacts(ticket.kategori).length > 0
+                                          ? "Kirim tiket ini secara manual ke kontak aktif sesuai kategori."
+                                          : "Belum ada kontak aktif untuk kategori ini. Atur di menu Kontak."}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  {getSuggestedContacts(ticket.kategori).length > 0 && (
+                                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                                      <div className="text-xs text-muted-foreground">
+                                        Akan dikirim ke {getSuggestedContacts(ticket.kategori).length} kontak aktif kategori ini.
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        className="gradient-primary"
+                                        onClick={() => handleManualForward(ticket)}
+                                      >
+                                        Kirim Manual
+                                      </Button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Info kontak yang akan menerima saat auto-forward aktif */}
+                              {autoForwardEnabled && ticket.auto_forwarded && getSuggestedContacts(ticket.kategori).length > 0 && (
                                 <div className="mt-3 p-3 glass-card rounded-xl">
                                   <p className="text-xs text-muted-foreground mb-2">
                                     💡 Akan diteruskan ke:
