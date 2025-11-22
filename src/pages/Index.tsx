@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const [view, setView] = useState<"hero" | "chat" | "tickets" | "admin">("hero");
+  const [adminTab, setAdminTab] = useState<"tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins">("tickets");
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -129,37 +130,108 @@ const Index = () => {
               </div>
             </button>
 
-            <nav className="flex gap-1 flex-shrink-0">
-              <Button
-                variant={view === "chat" ? "default" : "ghost"}
-                className={`${view === "chat" ? "gradient-primary" : "glass"} h-8 md:h-9 text-xs md:text-sm px-2 md:px-3`}
-                onClick={() => setView("chat")}
-                size="sm"
-              >
-                <MessageSquare className="h-3 w-3 md:h-4 md:w-4" />
-                <span className="hidden sm:inline ml-1 md:ml-2">Chat</span>
-              </Button>
-              <Button
-                variant={view === "tickets" ? "default" : "ghost"}
-                className={`${view === "tickets" ? "gradient-primary" : "glass"} h-8 md:h-9 text-xs md:text-sm px-2 md:px-3`}
-                onClick={() => setView("tickets")}
-                size="sm"
-              >
-                <Ticket className="h-3 w-3 md:h-4 md:w-4" />
-                <span className="hidden sm:inline ml-1 md:ml-2">Tiket</span>
-              </Button>
-              
-              {isAdmin ? (
+            <nav className="flex gap-1 flex-shrink-0 items-center">
+              {/* Show main navigation when not in admin view */}
+              {view !== "admin" && (
                 <>
                   <Button
-                    variant={view === "admin" ? "default" : "ghost"}
-                    className={`${view === "admin" ? "gradient-primary" : "glass"} h-8 md:h-9 text-xs md:text-sm px-2 md:px-3`}
-                    onClick={() => setView("admin")}
+                    variant={view === "chat" ? "default" : "ghost"}
+                    className={`${view === "chat" ? "gradient-primary" : "glass"} h-8 md:h-9 text-xs md:text-sm px-2 md:px-3`}
+                    onClick={() => setView("chat")}
                     size="sm"
                   >
-                    <Shield className="h-3 w-3 md:h-4 md:w-4" />
+                    <MessageSquare className="h-3 w-3 md:h-4 md:w-4" />
+                    <span className="hidden sm:inline ml-1 md:ml-2">Chat</span>
+                  </Button>
+                  <Button
+                    variant={view === "tickets" ? "default" : "ghost"}
+                    className={`${view === "tickets" ? "gradient-primary" : "glass"} h-8 md:h-9 text-xs md:text-sm px-2 md:px-3`}
+                    onClick={() => setView("tickets")}
+                    size="sm"
+                  >
+                    <Ticket className="h-3 w-3 md:h-4 md:w-4" />
+                    <span className="hidden sm:inline ml-1 md:ml-2">Tiket</span>
+                  </Button>
+                </>
+              )}
+              
+              {/* Show admin tabs navigation when in admin view */}
+              {isAdmin && view === "admin" && (
+                <>
+                  <Button
+                    variant={adminTab === "tickets" ? "default" : "ghost"}
+                    className={`${adminTab === "tickets" ? "gradient-primary" : "glass"} h-8 md:h-9 text-xs md:text-sm px-2 md:px-3`}
+                    onClick={() => setAdminTab("tickets")}
+                    size="sm"
+                  >
+                    <Ticket className="h-3 w-3 md:h-4 md:w-4" />
+                    <span className="hidden sm:inline ml-1 md:ml-2">Tiket</span>
+                  </Button>
+                  <Button
+                    variant={adminTab === "stats" ? "default" : "ghost"}
+                    className={`${adminTab === "stats" ? "gradient-primary" : "glass"} h-8 md:h-9 text-xs md:text-sm px-2 md:px-3`}
+                    onClick={() => setAdminTab("stats")}
+                    size="sm"
+                  >
+                    <span className="hidden sm:inline ml-1 md:ml-2">Stat</span>
+                  </Button>
+                  <Button
+                    variant={adminTab === "analytics" ? "default" : "ghost"}
+                    className={`${adminTab === "analytics" ? "gradient-primary" : "glass"} h-8 md:h-9 text-xs md:text-sm px-2 md:px-3`}
+                    onClick={() => setAdminTab("analytics")}
+                    size="sm"
+                  >
+                    <span className="hidden sm:inline ml-1 md:ml-2">Chart</span>
+                  </Button>
+                  <Button
+                    variant={adminTab === "templates" ? "default" : "ghost"}
+                    className={`${adminTab === "templates" ? "gradient-primary" : "glass"} h-8 md:h-9 text-xs md:text-sm px-2 md:px-3`}
+                    onClick={() => setAdminTab("templates")}
+                    size="sm"
+                  >
+                    <span className="hidden sm:inline ml-1 md:ml-2">Template</span>
+                  </Button>
+                  <Button
+                    variant={adminTab === "contacts" ? "default" : "ghost"}
+                    className={`${adminTab === "contacts" ? "gradient-primary" : "glass"} h-8 md:h-9 text-xs md:text-sm px-2 md:px-3`}
+                    onClick={() => setAdminTab("contacts")}
+                    size="sm"
+                  >
+                    <span className="hidden sm:inline ml-1 md:ml-2">Kontak</span>
+                  </Button>
+                  <Button
+                    variant={adminTab === "api" ? "default" : "ghost"}
+                    className={`${adminTab === "api" ? "gradient-primary" : "glass"} h-8 md:h-9 text-xs md:text-sm px-2 md:px-3`}
+                    onClick={() => setAdminTab("api")}
+                    size="sm"
+                  >
+                    <span className="hidden sm:inline ml-1 md:ml-2">API</span>
+                  </Button>
+                  <Button
+                    variant={adminTab === "admins" ? "default" : "ghost"}
+                    className={`${adminTab === "admins" ? "gradient-primary" : "glass"} h-8 md:h-9 text-xs md:text-sm px-2 md:px-3`}
+                    onClick={() => setAdminTab("admins")}
+                    size="sm"
+                  >
                     <span className="hidden sm:inline ml-1 md:ml-2">Admin</span>
                   </Button>
+                </>
+              )}
+              
+              {/* Admin login/logout buttons */}
+              {isAdmin ? (
+                <>
+                  {view !== "admin" && (
+                    <Button
+                      variant="ghost"
+                      className="glass h-8 md:h-9 text-xs md:text-sm px-2 md:px-3"
+                      onClick={() => setView("admin")}
+                      size="sm"
+                    >
+                      <Shield className="h-3 w-3 md:h-4 md:w-4" />
+                      <span className="hidden sm:inline ml-1 md:ml-2">Admin</span>
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     className="glass h-8 md:h-9 text-xs px-2 md:px-3"
@@ -193,7 +265,7 @@ const Index = () => {
         <div className="animate-fade-in">
           {view === "chat" && <ChatInterface />}
           {view === "tickets" && <TicketHistory />}
-          {view === "admin" && isAdmin && <AdminDashboard />}
+          {view === "admin" && isAdmin && <AdminDashboard activeTab={adminTab} />}
         </div>
       </main>
     </div>

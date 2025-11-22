@@ -5,13 +5,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { Shield, Send, FileText, User, MapPin, Calendar, AlertCircle, Search, BarChart3, Users, Bell, TrendingUp, MoreHorizontal } from "lucide-react";
+import { Shield, Send, User, MapPin, Calendar, AlertCircle, Search } from "lucide-react";
 import { toast } from "sonner";
 import { AdminAnalytics } from "./AdminAnalytics";
 import { SubAdminManagement } from "./SubAdminManagement";
@@ -64,14 +62,17 @@ const authorityOptions = [
   { value: "lainnya", label: "Lainnya" },
 ];
 
-export const AdminDashboard = () => {
+interface AdminDashboardProps {
+  activeTab: "tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins";
+}
+
+export const AdminDashboard = ({ activeTab }: AdminDashboardProps) => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [forwardingContacts, setForwardingContacts] = useState<ForwardingContact[]>([]);
-  const [activeTab, setActiveTab] = useState("tickets");
   const [isBulkForwarding, setIsBulkForwarding] = useState(false);
 
   useEffect(() => {
@@ -221,90 +222,18 @@ export const AdminDashboard = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="sticky top-[52px] md:top-[60px] z-50 bg-background backdrop-blur-xl border-b border-border/20 shadow-lg -mx-4 px-4 pb-4 transition-all duration-300">
-          <div className="flex items-start justify-between pt-4 mb-4 flex-col md:flex-row gap-3 md:gap-4">
-            <div>
-              <h1 className="text-xl md:text-3xl font-bold gradient-text">Dashboard Admin</h1>
-              <p className="text-[10px] md:text-sm text-muted-foreground mt-0.5 md:mt-1">
-                Kelola tiket keluhan dan sistem penerusan otomatis
-              </p>
-            </div>
-            <NotificationBell />
-          </div>
-
-          <div className="flex gap-2 items-center">
-            <TabsList className="flex-1 grid grid-cols-4 glass border-2 border-primary/20 gap-0.5 md:gap-1 p-0.5 md:p-1 h-auto">
-              <TabsTrigger 
-                value="tickets" 
-                className="data-[state=active]:gradient-primary data-[state=active]:text-white text-[9px] sm:text-[10px] md:text-sm px-0.5 sm:px-1 md:px-3 py-1 md:py-2 h-auto"
-              >
-                <FileText className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 sm:mr-0.5 md:mr-2" />
-                <span className="hidden sm:inline">Tiket</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="stats" 
-                className="data-[state=active]:gradient-primary data-[state=active]:text-white text-[9px] sm:text-[10px] md:text-sm px-0.5 sm:px-1 md:px-3 py-1 md:py-2 h-auto"
-              >
-                <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 sm:mr-0.5 md:mr-2" />
-                <span className="hidden sm:inline">Stat</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="analytics" 
-                className="data-[state=active]:gradient-primary data-[state=active]:text-white text-[9px] sm:text-[10px] md:text-sm px-0.5 sm:px-1 md:px-3 py-1 md:py-2 h-auto"
-              >
-                <BarChart3 className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 sm:mr-0.5 md:mr-2" />
-                <span className="hidden sm:inline">Chart</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="templates" 
-                className="data-[state=active]:gradient-primary data-[state=active]:text-white text-[9px] sm:text-[10px] md:text-sm px-0.5 sm:px-1 md:px-3 py-1 md:py-2 h-auto"
-              >
-                <FileText className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 sm:mr-0.5 md:mr-2" />
-                <span className="hidden lg:inline">Template</span>
-                <span className="lg:hidden hidden sm:inline">Tmpl</span>
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Dropdown for hidden tabs on mobile */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="glass border-2 border-primary/20 h-auto py-1 md:py-2 px-2"
-                >
-                  <MoreHorizontal className="h-3 w-3 md:h-4 md:w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40 bg-background/95 backdrop-blur-xl border-primary/20 z-[60]">
-                <DropdownMenuItem 
-                  onClick={() => setActiveTab("contacts")}
-                  className={`cursor-pointer ${activeTab === "contacts" ? "bg-primary text-primary-foreground" : ""}`}
-                >
-                  <Send className="h-3 w-3 mr-2" />
-                  Kontak
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setActiveTab("api")}
-                  className={`cursor-pointer ${activeTab === "api" ? "bg-primary text-primary-foreground" : ""}`}
-                >
-                  <Shield className="h-3 w-3 mr-2" />
-                  API Settings
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setActiveTab("admins")}
-                  className={`cursor-pointer ${activeTab === "admins" ? "bg-primary text-primary-foreground" : ""}`}
-                >
-                  <Users className="h-3 w-3 mr-2" />
-                  Admin
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="text-xl md:text-3xl font-bold gradient-text">Dashboard Admin</h1>
+          <p className="text-[10px] md:text-sm text-muted-foreground mt-0.5 md:mt-1">
+            Kelola tiket keluhan dan sistem penerusan otomatis
+          </p>
         </div>
+        <NotificationBell />
+      </div>
 
-        <TabsContent value="tickets" className="mt-6 animate-fade-in">
+      {activeTab === "tickets" && (
+        <>
           {isLoading ? (
             <div className="glass-card max-w-7xl mx-auto overflow-hidden card-elevated">
               <div className="gradient-primary p-6">
@@ -488,32 +417,15 @@ export const AdminDashboard = () => {
               </ScrollArea>
             </div>
           )}
-        </TabsContent>
+        </>
+      )}
 
-        <TabsContent value="stats" className="mt-6">
-          <ForwardingStats />
-        </TabsContent>
-
-        <TabsContent value="analytics" className="mt-6">
-          <AdminAnalytics />
-        </TabsContent>
-
-        <TabsContent value="templates" className="mt-6">
-          <MessageTemplates />
-        </TabsContent>
-
-        <TabsContent value="contacts" className="mt-6">
-          <ContactManagement />
-        </TabsContent>
-
-        <TabsContent value="api" className="mt-6">
-          <ApiSettings />
-        </TabsContent>
-
-        <TabsContent value="admins" className="mt-6">
-          <SubAdminManagement />
-        </TabsContent>
-      </Tabs>
+      {activeTab === "stats" && <ForwardingStats />}
+      {activeTab === "analytics" && <AdminAnalytics />}
+      {activeTab === "templates" && <MessageTemplates />}
+      {activeTab === "contacts" && <ContactManagement />}
+      {activeTab === "api" && <ApiSettings />}
+      {activeTab === "admins" && <SubAdminManagement />}
     </div>
   );
 };
