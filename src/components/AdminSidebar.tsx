@@ -67,18 +67,16 @@ export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSideba
       >
         {/* Logo/Brand Header */}
       <SidebarHeader className="border-b border-border/50 p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className={`glass-card gradient-primary rounded-xl flex-shrink-0 ${collapsed ? "p-2" : "p-2"}`}>
-              <Shield className="h-6 w-6 text-white" />
-            </div>
-            {!collapsed && (
-              <div className="flex flex-col min-w-0">
-                <span className="font-bold text-foreground text-base truncate">Admin Panel</span>
-                <span className="text-xs text-muted-foreground truncate">Sistem Keluhan</span>
-              </div>
-            )}
+        <div className="flex items-center gap-3">
+          <div className={`glass-card gradient-primary rounded-xl flex-shrink-0 transition-all ${collapsed ? "p-2.5" : "p-2.5"}`}>
+            <Shield className={`text-white transition-all ${collapsed ? "h-5 w-5" : "h-6 w-6"}`} />
           </div>
+          {!collapsed && (
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="font-bold text-foreground text-base truncate">Admin Panel</span>
+              <span className="text-xs text-muted-foreground truncate">Sistem Keluhan</span>
+            </div>
+          )}
           
           {/* Close button for mobile */}
           {isMobile && !collapsed && (
@@ -94,7 +92,7 @@ export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSideba
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="bg-transparent">
+      <SidebarContent className="bg-transparent overflow-hidden">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1 px-2 py-4">
@@ -108,19 +106,19 @@ export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSideba
                     }}
                     tooltip={collapsed ? item.label : undefined}
                     className={`
-                      hover:bg-accent/10 text-foreground
-                      ${collapsed ? "justify-center px-2" : "px-4"}
+                      hover:bg-accent/10 text-foreground w-full
+                      ${collapsed ? "justify-center px-2 mx-auto" : "justify-start px-4"}
                       transition-all duration-200 rounded-xl h-11
                     `}
                   >
-                    <item.icon className={`${collapsed ? "h-5 w-5" : "h-5 w-5 mr-3"} flex-shrink-0`} />
-                    {!collapsed && <span className="font-medium">{item.label}</span>}
+                    <item.icon className={`flex-shrink-0 ${collapsed ? "h-5 w-5" : "h-5 w-5 mr-3"}`} />
+                    {!collapsed && <span className="font-medium truncate">{item.label}</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
 
               {/* Separator */}
-              <div className="my-4">
+              <div className="my-4 px-2">
                 <Separator />
               </div>
 
@@ -135,16 +133,16 @@ export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSideba
                     isActive={activeTab === item.id}
                     tooltip={collapsed ? item.label : undefined}
                     className={`
+                      w-full transition-all duration-200 rounded-xl h-11
                       ${activeTab === item.id 
                         ? "gradient-primary text-white shadow-lg" 
                         : "hover:bg-primary/10 text-foreground"
                       }
-                      ${collapsed ? "justify-center px-2" : "px-4"}
-                      transition-all duration-200 rounded-xl h-11
+                      ${collapsed ? "justify-center px-2 mx-auto" : "justify-start px-4"}
                     `}
                   >
-                    <item.icon className={`${collapsed ? "h-5 w-5" : "h-5 w-5 mr-3"} flex-shrink-0`} />
-                    {!collapsed && <span className="font-medium">{item.label}</span>}
+                    <item.icon className={`flex-shrink-0 ${collapsed ? "h-5 w-5" : "h-5 w-5 mr-3"}`} />
+                    {!collapsed && <span className="font-medium truncate">{item.label}</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -155,7 +153,7 @@ export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSideba
 
       {/* User Footer */}
       <SidebarFooter className="border-t border-border/50 p-4 mt-auto">
-        <div className={`glass-card p-3 rounded-xl ${collapsed ? "flex justify-center" : ""}`}>
+        <div className={`glass-card p-3 rounded-xl ${collapsed ? "flex justify-center items-center" : ""}`}>
           {!collapsed ? (
             <div className="space-y-3">
               <div className="flex items-center gap-3">
@@ -171,7 +169,7 @@ export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSideba
                 onClick={handleLogout}
                 variant="outline"
                 size="sm"
-                className="w-full border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+                className="w-full border-destructive/50 hover:bg-destructive/10 hover:text-destructive transition-colors"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
@@ -182,7 +180,7 @@ export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSideba
               onClick={handleLogout}
               variant="ghost"
               size="icon"
-              className="hover:bg-destructive/10 hover:text-destructive"
+              className="hover:bg-destructive/10 hover:text-destructive transition-colors mx-auto"
               title="Logout"
             >
               <LogOut className="h-5 w-5" />

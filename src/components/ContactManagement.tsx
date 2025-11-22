@@ -284,34 +284,27 @@ export const ContactManagement = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Auto Forward Toggle */}
-      <Card className="p-6 bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-primary/20">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-foreground">
-              Auto-Forward Keluhan
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {autoForwardEnabled 
-                ? "Tiket otomatis diteruskan ke kontak berdasarkan kategori"
-                : "Aktifkan untuk meneruskan tiket secara otomatis"}
-            </p>
+      {/* Auto Forward Toggle - Simplified */}
+      <Card className="p-4 bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-primary/20 sticky top-16 z-20 backdrop-blur-xl bg-background/95">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 flex-1">
+            <div className={`p-2 rounded-lg transition-colors ${autoForwardEnabled ? 'bg-primary/20' : 'bg-muted'}`}>
+              <Send className={`h-5 w-5 ${autoForwardEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-foreground">
+                Mode Auto-Forward
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                {autoForwardEnabled ? "Aktif - Tiket otomatis diteruskan" : "Nonaktif - Forwarding manual"}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Switch
-              checked={autoForwardEnabled}
-              onCheckedChange={toggleAutoForward}
-              className="data-[state=checked]:bg-primary"
-            />
-            <Button
-              onClick={handleSendAll}
-              disabled={loading || !autoForwardEnabled}
-              className="gradient-primary text-white"
-            >
-              <Send className="mr-2 h-4 w-4" />
-              Kirim Semua
-            </Button>
-          </div>
+          <Switch
+            checked={autoForwardEnabled}
+            onCheckedChange={toggleAutoForward}
+            className="data-[state=checked]:bg-primary"
+          />
         </div>
       </Card>
 
