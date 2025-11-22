@@ -22,6 +22,11 @@ interface AdminSidebarProps {
   onNavigate?: (view: "chat" | "history") => void;
 }
 
+const navigationItems = [
+  { id: "chat", label: "Chat Bot", icon: MessageSquare, action: "navigate" as const },
+  { id: "history", label: "Riwayat Tiket", icon: History, action: "navigate" as const },
+];
+
 const menuItems = [
   { id: "tickets", label: "Kelola Tiket", icon: FileText },
   { id: "stats", label: "Statistik", icon: TrendingUp },
@@ -63,35 +68,22 @@ export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSideba
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1 px-2 py-4">
               {/* Navigation Items - Chat & History */}
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => onNavigate?.("chat")}
-                  tooltip={collapsed ? "Chat Bot" : undefined}
-                  className={`
-                    hover:bg-accent/10 text-foreground
-                    ${collapsed ? "justify-center px-2" : "px-4"}
-                    transition-all duration-200 rounded-xl h-11
-                  `}
-                >
-                  <MessageSquare className={`${collapsed ? "h-5 w-5" : "h-5 w-5 mr-3"} flex-shrink-0`} />
-                  {!collapsed && <span className="font-medium">Chat Bot</span>}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => onNavigate?.("history")}
-                  tooltip={collapsed ? "Riwayat Tiket" : undefined}
-                  className={`
-                    hover:bg-accent/10 text-foreground
-                    ${collapsed ? "justify-center px-2" : "px-4"}
-                    transition-all duration-200 rounded-xl h-11
-                  `}
-                >
-                  <History className={`${collapsed ? "h-5 w-5" : "h-5 w-5 mr-3"} flex-shrink-0`} />
-                  {!collapsed && <span className="font-medium">Riwayat Tiket</span>}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {navigationItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    onClick={() => onNavigate?.(item.id as "chat" | "history")}
+                    tooltip={collapsed ? item.label : undefined}
+                    className={`
+                      hover:bg-accent/10 text-foreground
+                      ${collapsed ? "justify-center px-2" : "px-4"}
+                      transition-all duration-200 rounded-xl h-11
+                    `}
+                  >
+                    <item.icon className={`${collapsed ? "h-5 w-5" : "h-5 w-5 mr-3"} flex-shrink-0`} />
+                    {!collapsed && <span className="font-medium">{item.label}</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
 
               {/* Separator */}
               <div className="my-4">
