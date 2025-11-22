@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Loader2, Bot, User } from "lucide-react";
+import { Send, Loader2, Moon, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { TicketDisplay } from "./TicketDisplay";
@@ -26,7 +26,7 @@ export const ChatInterface = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "👋 Halo! Saya asisten AI kampus UIN Alauddin Makassar.\n\nSaya dapat membantu Anda dengan:\n✓ Menerima keluhan fasilitas, akademik, administrasi\n✓ Menjawab pertanyaan tentang kampus\n✓ Membuat tiket keluhan otomatis\n\nSilakan sampaikan keluhan atau pertanyaan Anda!"
+      content: "السلام عليكم ورحمة الله وبركاته 🌙\n\nSaya asisten AI kampus UIN Alauddin Makassar.\n\nSaya dapat membantu Anda dengan:\n✓ Menerima keluhan fasilitas, akademik, administrasi\n✓ Menjawab pertanyaan tentang kampus\n✓ Membuat tiket keluhan otomatis\n\nSilakan sampaikan keluhan atau pertanyaan Anda!"
     }
   ]);
   const [input, setInput] = useState("");
@@ -274,7 +274,7 @@ export const ChatInterface = () => {
       <div className="gradient-primary p-3 md:p-6">
         <div className="flex items-center gap-2 md:gap-3">
           <div className="glass-card p-1.5 md:p-2 rounded-xl animate-pulse">
-            <Bot className="h-5 w-5 md:h-8 md:w-8 text-white" />
+            <Moon className="h-5 w-5 md:h-8 md:w-8 text-white" />
           </div>
           <div>
             <h2 className="text-base md:text-2xl font-bold text-white">Chatbot AI Kampus</h2>
@@ -299,7 +299,7 @@ export const ChatInterface = () => {
             >
               {message.role === "assistant" && (
                 <div className="glass-card p-1 md:p-2 h-7 w-7 md:h-10 md:w-10 flex items-center justify-center flex-shrink-0 animate-scale-in">
-                  <Bot className="h-3.5 w-3.5 md:h-5 md:w-5 text-primary" />
+                  <Moon className="h-3.5 w-3.5 md:h-5 md:w-5 text-primary" />
                 </div>
               )}
               
@@ -333,7 +333,7 @@ export const ChatInterface = () => {
           {isLoading && (
             <div className="flex gap-2 md:gap-3 animate-fade-in">
               <div className="glass-card p-1 md:p-2 h-7 w-7 md:h-10 md:w-10 flex items-center justify-center">
-                <Bot className="h-3.5 w-3.5 md:h-5 md:w-5 text-primary animate-pulse" />
+                <Moon className="h-3.5 w-3.5 md:h-5 md:w-5 text-primary animate-pulse" />
               </div>
               <div className="glass-card border border-border/50 rounded-2xl p-2 md:p-4 flex items-center gap-2">
                 <Loader2 className="h-3.5 w-3.5 md:h-4 md:w-4 animate-spin text-primary" />
