@@ -1,4 +1,4 @@
-import { FileText, TrendingUp, BarChart3, Mail, Send, Settings, Users, Shield, LogOut, User, Moon, History, Menu, X } from "lucide-react";
+import { FileText, TrendingUp, BarChart3, Mail, Send, Settings, Users, Shield, LogOut, User, Moon, History, Menu, X, BookOpen } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -19,7 +19,7 @@ import uinLogo from "@/assets/uin-logo.png";
 
 interface AdminSidebarProps {
   activeTab: string;
-  onTabChange: (tab: "tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins") => void;
+  onTabChange: (tab: "tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins" | "documents") => void;
   onNavigate?: (view: "chat" | "history") => void;
 }
 
@@ -32,6 +32,7 @@ const menuItems = [
   { id: "tickets", label: "Kelola Tiket", icon: FileText },
   { id: "stats", label: "Statistik", icon: TrendingUp },
   { id: "analytics", label: "Analitik", icon: BarChart3 },
+  { id: "documents", label: "Dokumen Kampus", icon: BookOpen },
   { id: "templates", label: "Template Pesan", icon: Mail },
   { id: "contacts", label: "Kontak", icon: Send },
   { id: "api", label: "API Settings", icon: Settings },

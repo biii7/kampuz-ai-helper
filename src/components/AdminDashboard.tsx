@@ -17,6 +17,7 @@ import { ContactManagement } from "./ContactManagement";
 import { ApiSettings } from "./ApiSettings";
 import { MessageTemplates } from "./MessageTemplates";
 import { ForwardingStats } from "./ForwardingStats";
+import { CampusDocuments } from "./CampusDocuments";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { NotificationBell } from "./NotificationBell";
 
@@ -63,7 +64,7 @@ const authorityOptions = [
 ];
 
 interface AdminDashboardProps {
-  activeTab: "tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins";
+  activeTab: "tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins" | "documents";
   hideNotification?: boolean;
 }
 
@@ -701,6 +702,10 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
           </div>
           <SubAdminManagement />
         </>
+      )}
+
+      {activeTab === "documents" && (
+        <CampusDocuments />
       )}
     </div>
   );
