@@ -22,9 +22,9 @@ serve(async (req) => {
       }
     );
 
-    const { ticketId } = await req.json();
+    const { ticketId, specificContactId } = await req.json();
 
-    console.log('Processing ticket for auto-forward:', ticketId);
+    console.log('Processing ticket for forward:', ticketId, specificContactId ? `to specific contact: ${specificContactId}` : 'to all contacts');
 
     // Get ticket details
     const { data: ticket, error: ticketError } = await supabaseClient
@@ -52,16 +52,27 @@ serve(async (req) => {
     }
 
     // Get active contacts for this category
-    const { data: contacts, error: contactsError } = await supabaseClient
+    let contactsQuery = supabaseClient
       .from('forwarding_contacts')
       .select('*')
       .eq('category', ticket.kategori)
       .eq('is_active', true);
+    
+    // If specific contact ID provided, filter to that contact only
+    if (specificContactId) {
+      contactsQuery = contactsQuery.eq('id', specificContactId);
+    }
+
+    const { data: contacts, error: contactsError } = await contactsQuery;
 
     if (contactsError || !contacts || contacts.length === 0) {
       console.log('No active contacts found for category:', ticket.kategori);
       return new Response(
-        JSON.stringify({ message: 'No active contacts for this category' }),
+        JSON.stringify({ 
+          message: specificContactId 
+            ? 'Specified contact not found or inactive' 
+            : 'No active contacts for this category' 
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -158,11 +169,11 @@ serve(async (req) => {
       }
     }
 
-    // Update ticket as auto-forwarded and move from pending to diproses
+    // Update ticket status (only update auto_forwarded if no specific contact, meaning bulk/auto mode)
     await supabaseClient
       .from('tickets')
       .update({ 
-        auto_forwarded: true,
+        auto_forwarded: specificContactId ? ticket.auto_forwarded : true,
         status: ticket.status === 'pending' ? 'diproses' : ticket.status,
       })
       .eq('id', ticketId);
@@ -170,7 +181,9 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: 'Ticket forwarded',
+        message: specificContactId 
+          ? `Ticket forwarded to specific contact` 
+          : 'Ticket forwarded to all contacts',
         results 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
