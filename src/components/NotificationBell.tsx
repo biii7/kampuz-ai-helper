@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Bell } from "lucide-react";
+import { Bell, Clock, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -78,6 +78,34 @@ export const NotificationBell = () => {
       setUnreadCount(data?.filter(n => !n.is_read).length || 0);
     } catch (error) {
       console.error("Error loading notifications:", error);
+    }
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'pending_reminder':
+        return <Clock className="h-4 w-4 text-orange-500" />;
+      case 'new_ticket':
+        return <Bell className="h-4 w-4 text-blue-500" />;
+      case 'status_change':
+        return <AlertTriangle className="h-4 w-4 text-green-500" />;
+      default:
+        return <Bell className="h-4 w-4 text-primary" />;
+    }
+  };
+
+  const getNotificationStyle = (type: string, isRead: boolean) => {
+    if (isRead) return "";
+    
+    switch (type) {
+      case 'pending_reminder':
+        return "bg-orange-500/10 border-l-4 border-orange-500";
+      case 'new_ticket':
+        return "bg-blue-500/10 border-l-4 border-blue-500";
+      case 'status_change':
+        return "bg-green-500/10 border-l-4 border-green-500";
+      default:
+        return "bg-primary/5";
     }
   };
 
@@ -160,8 +188,8 @@ export const NotificationBell = () => {
             notifications.map((notification) => (
               <DropdownMenuItem
                 key={notification.id}
-                className={`flex flex-col items-start p-4 cursor-pointer border-b border-border/20 ${
-                  !notification.is_read ? "bg-primary/5" : ""
+                className={`flex flex-col items-start p-4 cursor-pointer border-b border-border/20 transition-colors ${
+                  getNotificationStyle(notification.type, notification.is_read)
                 }`}
                 onClick={() => {
                   if (!notification.is_read) {
@@ -170,22 +198,41 @@ export const NotificationBell = () => {
                 }}
               >
                 <div className="flex items-start justify-between w-full mb-2">
-                  <h4 className="font-semibold text-sm text-foreground">
-                    {notification.title}
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    {getNotificationIcon(notification.type)}
+                    <h4 className="font-semibold text-sm text-foreground">
+                      {notification.title}
+                    </h4>
+                  </div>
                   {!notification.is_read && (
-                    <div className="h-2 w-2 rounded-full bg-primary ml-2 flex-shrink-0" />
+                    <div className="h-2 w-2 rounded-full bg-primary ml-2 flex-shrink-0 animate-pulse" />
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground mb-2 leading-relaxed">
+                <p className="text-xs text-muted-foreground mb-2 leading-relaxed pl-6">
                   {notification.message}
                 </p>
-                <span className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(notification.created_at), {
-                    addSuffix: true,
-                    locale: id,
-                  })}
-                </span>
+                <div className="flex items-center justify-between w-full pl-6">
+                  <span className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(notification.created_at), {
+                      addSuffix: true,
+                      locale: id,
+                    })}
+                  </span>
+                  {notification.type === 'pending_reminder' && notification.ticket_id && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-xs h-6 px-2 text-orange-600 hover:text-orange-700 hover:bg-orange-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.location.hash = '#/admin';
+                        setIsOpen(false);
+                      }}
+                    >
+                      Lihat Tiket
+                    </Button>
+                  )}
+                </div>
               </DropdownMenuItem>
             ))
           )}
