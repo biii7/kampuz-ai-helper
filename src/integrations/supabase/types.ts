@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          permission: Database["public"]["Enums"]["permission_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permission: Database["public"]["Enums"]["permission_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permission?: Database["public"]["Enums"]["permission_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       campus_documents: {
         Row: {
           content: string
@@ -240,6 +261,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_permission: {
+        Args: {
+          _permission: Database["public"]["Enums"]["permission_type"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -250,6 +278,15 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      permission_type:
+        | "view_tickets"
+        | "assign_tickets"
+        | "forward_tickets"
+        | "manage_contacts"
+        | "manage_templates"
+        | "view_analytics"
+        | "manage_api_settings"
+        | "manage_admins"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -378,6 +415,16 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      permission_type: [
+        "view_tickets",
+        "assign_tickets",
+        "forward_tickets",
+        "manage_contacts",
+        "manage_templates",
+        "view_analytics",
+        "manage_api_settings",
+        "manage_admins",
+      ],
     },
   },
 } as const

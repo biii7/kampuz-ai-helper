@@ -78,6 +78,7 @@ export const AdminDashboard = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [forwardingContacts, setForwardingContacts] = useState<ForwardingContact[]>([]);
   const [activeTab, setActiveTab] = useState("tickets");
+  const [isBulkForwarding, setIsBulkForwarding] = useState(false);
 
   useEffect(() => {
     loadTickets();
@@ -159,6 +160,58 @@ export const AdminDashboard = () => {
 
   const getSuggestedContacts = (category: string) => {
     return forwardingContacts.filter(contact => contact.category === category);
+  };
+
+  const handleBulkForward = async () => {
+    const unforwardedTickets = tickets.filter(t => !t.auto_forwarded);
+    
+    if (unforwardedTickets.length === 0) {
+      toast.info("Semua tiket sudah diteruskan");
+      return;
+    }
+
+    if (!confirm(`Apakah Anda yakin ingin meneruskan ${unforwardedTickets.length} tiket ke pihak berwenang?`)) {
+      return;
+    }
+
+    setIsBulkForwarding(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    try {
+      for (const ticket of unforwardedTickets) {
+        try {
+          // Call forward-ticket edge function
+          const { error } = await supabase.functions.invoke('forward-ticket', {
+            body: { ticketId: ticket.id }
+          });
+
+          if (error) {
+            console.error(`Failed to forward ticket ${ticket.id}:`, error);
+            failCount++;
+          } else {
+            successCount++;
+          }
+        } catch (error) {
+          console.error(`Error forwarding ticket ${ticket.id}:`, error);
+          failCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        toast.success(`✅ ${successCount} tiket berhasil diteruskan!`);
+      }
+      if (failCount > 0) {
+        toast.error(`❌ ${failCount} tiket gagal diteruskan`);
+      }
+
+      loadTickets();
+    } catch (error) {
+      console.error("Error in bulk forward:", error);
+      toast.error("Gagal meneruskan tiket");
+    } finally {
+      setIsBulkForwarding(false);
+    }
   };
 
   const handleAssignTicket = async () => {
@@ -321,14 +374,23 @@ export const AdminDashboard = () => {
 
               {/* Search and Filter */}
               <div className="p-6 space-y-4 border-b border-border/30">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input
-                    placeholder="Cari tiket..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 glass border-border/50"
-                  />
+                <div className="flex gap-3 items-center">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      placeholder="Cari tiket..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 glass border-border/50"
+                    />
+                  </div>
+                  <Button
+                    onClick={handleBulkForward}
+                    disabled={isBulkForwarding || tickets.filter(t => !t.auto_forwarded).length === 0}
+                    className="gradient-primary shrink-0"
+                  >
+                    {isBulkForwarding ? "Mengirim..." : `Kirim Semua (${tickets.filter(t => !t.auto_forwarded).length})`}
+                  </Button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
