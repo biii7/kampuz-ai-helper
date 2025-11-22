@@ -4,11 +4,10 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -21,7 +20,6 @@ import { ApiSettings } from "./ApiSettings";
 import { MessageTemplates } from "./MessageTemplates";
 import { ForwardingStats } from "./ForwardingStats";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-// Import NotificationBell component
 import { NotificationBell } from "./NotificationBell";
 
 interface Ticket {
@@ -72,10 +70,6 @@ export const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const [assignTo, setAssignTo] = useState("");
-  const [notes, setNotes] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [forwardingContacts, setForwardingContacts] = useState<ForwardingContact[]>([]);
   const [activeTab, setActiveTab] = useState("tickets");
   const [isBulkForwarding, setIsBulkForwarding] = useState(false);
@@ -211,36 +205,6 @@ export const AdminDashboard = () => {
       toast.error("Gagal meneruskan tiket");
     } finally {
       setIsBulkForwarding(false);
-    }
-  };
-
-  const handleAssignTicket = async () => {
-    if (!selectedTicket || !assignTo) return;
-
-    setIsSubmitting(true);
-    try {
-      const { error } = await supabase
-        .from("tickets")
-        .update({
-          assigned_to: assignTo,
-          assigned_at: new Date().toISOString(),
-          notes: notes || null,
-          status: "diproses",
-        })
-        .eq("id", selectedTicket.id);
-
-      if (error) throw error;
-
-      toast.success("Tiket berhasil dikirim ke pihak berwenang");
-      setSelectedTicket(null);
-      setAssignTo("");
-      setNotes("");
-      loadTickets();
-    } catch (error) {
-      console.error("Error assigning ticket:", error);
-      toast.error("Gagal mengirim tiket");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -475,51 +439,39 @@ export const AdminDashboard = () => {
                               </div>
                             </div>
 
-                            {ticket.assigned_to && (
-                              <div className="mt-4 p-3 glass-card rounded-xl">
-                                <p className="text-sm text-muted-foreground mb-1">Diteruskan ke:</p>
-                                <p className="text-sm font-semibold text-foreground">
-                                  {authorityOptions.find((opt) => opt.value === ticket.assigned_to)?.label ||
-                                    ticket.assigned_to}
-                                </p>
-                                {ticket.notes && (
-                                  <p className="text-xs text-muted-foreground mt-2">{ticket.notes}</p>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Auto-forward toggle and suggestions */}
-                            <div className="mt-4 space-y-3">
-                              <div className="flex items-center justify-between p-3 glass-card rounded-xl">
-                                <div className="flex items-center gap-2">
-                                  <Send className="h-4 w-4 text-primary" />
-                                  <span className="text-sm font-semibold text-foreground">
-                                    Teruskan Otomatis
-                                  </span>
+                            {/* Auto-forward toggle */}
+                            <div className="mt-4">
+                              <div className="flex items-center justify-between p-4 glass-card rounded-xl">
+                                <div className="flex items-center gap-3">
+                                  <Send className="h-5 w-5 text-primary" />
+                                  <div>
+                                    <p className="text-sm font-semibold text-foreground">
+                                      Auto-Forward
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {ticket.auto_forwarded ? "Aktif - Akan diteruskan otomatis" : "Nonaktif"}
+                                    </p>
+                                  </div>
                                 </div>
-                                <Button
-                                  onClick={() => toggleAutoForward(ticket.id, ticket.auto_forwarded)}
-                                  variant={ticket.auto_forwarded ? "default" : "outline"}
-                                  size="sm"
-                                  className={ticket.auto_forwarded ? "gradient-primary text-white" : ""}
-                                >
-                                  {ticket.auto_forwarded ? "Aktif" : "Nonaktif"}
-                                </Button>
+                                <Switch
+                                  checked={ticket.auto_forwarded || false}
+                                  onCheckedChange={() => toggleAutoForward(ticket.id, ticket.auto_forwarded)}
+                                />
                               </div>
 
-                              {getSuggestedContacts(ticket.kategori).length > 0 && (
-                                <div className="p-3 glass-card rounded-xl">
-                                  <p className="text-sm text-muted-foreground mb-2">
-                                    💡 Saran Tujuan Penerusan:
+                              {/* Suggested contacts if auto-forward is active */}
+                              {ticket.auto_forwarded && getSuggestedContacts(ticket.kategori).length > 0 && (
+                                <div className="mt-3 p-3 glass-card rounded-xl">
+                                  <p className="text-xs text-muted-foreground mb-2">
+                                    💡 Akan diteruskan ke:
                                   </p>
-                                  <div className="space-y-2">
+                                  <div className="space-y-1">
                                     {getSuggestedContacts(ticket.kategori).map((contact) => (
-                                      <div key={contact.id} className="flex items-center gap-2 text-sm">
-                                        <div className="h-2 w-2 rounded-full bg-primary"></div>
+                                      <div key={contact.id} className="flex items-center gap-2 text-xs">
+                                        <div className="h-1.5 w-1.5 rounded-full bg-primary"></div>
                                         <span className="font-semibold text-foreground">{contact.name}</span>
                                         <span className="text-muted-foreground">
-                                          ({contact.contact_type === "email" ? "📧" : "📱"}{" "}
-                                          {contact.contact_value})
+                                          ({contact.contact_type === "email" ? "📧" : "📱"})
                                         </span>
                                       </div>
                                     ))}
@@ -529,63 +481,6 @@ export const AdminDashboard = () => {
                             </div>
                           </div>
                         </div>
-
-                        <Dialog open={selectedTicket?.id === ticket.id} onOpenChange={(open) => !open && setSelectedTicket(null)}>
-                          <DialogTrigger asChild>
-                            <Button
-                              onClick={() => setSelectedTicket(ticket)}
-                              className="gradient-primary text-white hover:glow-hover"
-                              disabled={ticket.status === "selesai"}
-                            >
-                              <Send className="h-4 w-4 mr-2" />
-                              {ticket.assigned_to ? "Ubah Tujuan" : "Teruskan"}
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="glass-card border-border/50">
-                            <DialogHeader>
-                              <DialogTitle className="text-2xl gradient-text">Teruskan Tiket</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 pt-4">
-                              <div>
-                                <label className="text-sm font-semibold text-foreground mb-2 block">
-                                  Pihak Berwenang
-                                </label>
-                                <Select value={assignTo} onValueChange={setAssignTo}>
-                                  <SelectTrigger className="glass border-border/50">
-                                    <SelectValue placeholder="Pilih pihak berwenang" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {authorityOptions.map((option) => (
-                                      <SelectItem key={option.value} value={option.value}>
-                                        {option.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
-                              <div>
-                                <label className="text-sm font-semibold text-foreground mb-2 block">
-                                  Catatan (Opsional)
-                                </label>
-                                <Textarea
-                                  placeholder="Tambahkan catatan atau instruksi khusus..."
-                                  value={notes}
-                                  onChange={(e) => setNotes(e.target.value)}
-                                  className="glass border-border/50 min-h-[100px]"
-                                />
-                              </div>
-
-                              <Button
-                                onClick={handleAssignTicket}
-                                disabled={!assignTo || isSubmitting}
-                                className="w-full gradient-primary text-white hover:glow-hover"
-                              >
-                                {isSubmitting ? "Mengirim..." : "Kirim ke Pihak Berwenang"}
-                              </Button>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
                       </div>
                     </div>
                   ))}
