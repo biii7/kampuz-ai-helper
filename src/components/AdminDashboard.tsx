@@ -76,14 +76,15 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
   const [forwardingContacts, setForwardingContacts] = useState<ForwardingContact[]>([]);
   const [isBulkForwarding, setIsBulkForwarding] = useState(false);
   const [autoForwardEnabled, setAutoForwardEnabled] = useState(false);
+  const [selectedContacts, setSelectedContacts] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadTickets();
     loadForwardingContacts();
     loadAutoForwardSetting();
 
-    // Set up realtime subscription for new tickets
-    const channel: RealtimeChannel = supabase
+    // Set up realtime subscription for tickets
+    const ticketsChannel: RealtimeChannel = supabase
       .channel('tickets-changes')
       .on(
         'postgres_changes',
@@ -101,10 +102,61 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
           loadTickets();
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tickets'
+        },
+        () => {
+          loadTickets();
+        }
+      )
+      .subscribe();
+
+    // Set up realtime subscription for system settings (auto-forward toggle)
+    const settingsChannel: RealtimeChannel = supabase
+      .channel('settings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'system_settings',
+          filter: 'setting_key=eq.auto_forward_enabled'
+        },
+        (payload) => {
+          console.log('Auto-forward setting changed:', payload);
+          if (payload.new && 'setting_value' in payload.new) {
+            setAutoForwardEnabled(payload.new.setting_value === 'true');
+            toast.info(`Auto-forward ${payload.new.setting_value === 'true' ? 'diaktifkan' : 'dinonaktifkan'}`);
+          }
+        }
+      )
+      .subscribe();
+
+    // Set up realtime subscription for forwarding contacts
+    const contactsChannel: RealtimeChannel = supabase
+      .channel('contacts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'forwarding_contacts'
+        },
+        () => {
+          console.log('Forwarding contacts changed');
+          loadForwardingContacts();
+        }
+      )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(ticketsChannel);
+      supabase.removeChannel(settingsChannel);
+      supabase.removeChannel(contactsChannel);
     };
   }, []);
 
@@ -248,20 +300,38 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
     }
   };
 
-  const handleManualForward = async (ticket: Ticket) => {
+  const handleManualForward = async (ticket: Ticket, contactId?: string) => {
     try {
       const { error } = await supabase.functions.invoke('forward-ticket', {
-        body: { ticketId: ticket.id }
+        body: { 
+          ticketId: ticket.id,
+          specificContactId: contactId || null
+        }
       });
 
       if (error) throw error;
 
-      toast.success("Tiket berhasil dikirim ke kontak kategori ini");
+      const contact = contactId 
+        ? forwardingContacts.find(c => c.id === contactId)
+        : null;
+      
+      toast.success(
+        contact 
+          ? `Tiket berhasil dikirim ke ${contact.name}`
+          : "Tiket berhasil dikirim ke semua kontak kategori ini"
+      );
       loadTickets();
     } catch (error) {
       console.error("Error manual forward:", error);
       toast.error("Gagal mengirim tiket");
     }
+  };
+
+  const handleContactSelection = (ticketId: string, contactId: string) => {
+    setSelectedContacts(prev => ({
+      ...prev,
+      [ticketId]: contactId
+    }));
   };
 
   const getSuggestedContacts = (category: string) => {
@@ -453,8 +523,8 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
                                 </div>
                               )}
 
-                              {/* Manual mode: jika setting global NON AKTIF */}
-                              {!autoForwardEnabled && (
+                              {/* Manual mode: jika setting global NON AKTIF DAN status PENDING */}
+                              {!autoForwardEnabled && ticket.status === 'pending' && (
                                 <div className="mt-3 p-4 glass-card rounded-xl space-y-3">
                                   <div className="flex items-center gap-3">
                                     <Send className="h-5 w-5 text-primary" />
@@ -462,24 +532,68 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
                                       <p className="text-sm font-semibold text-foreground">Kirim Manual</p>
                                       <p className="text-xs text-muted-foreground">
                                         {getSuggestedContacts(ticket.kategori).length > 0
-                                          ? "Kirim tiket ini secara manual ke kontak aktif sesuai kategori."
+                                          ? "Pilih kontak spesifik atau kirim ke semua kontak kategori ini."
                                           : "Belum ada kontak aktif untuk kategori ini. Atur di menu Kontak."}
                                       </p>
                                     </div>
                                   </div>
 
                                   {getSuggestedContacts(ticket.kategori).length > 0 && (
-                                    <div className="flex items-center justify-between gap-3 flex-wrap">
-                                      <div className="text-xs text-muted-foreground">
-                                        Akan dikirim ke {getSuggestedContacts(ticket.kategori).length} kontak aktif kategori ini.
+                                    <div className="space-y-3">
+                                      {/* Dropdown pemilihan kontak spesifik */}
+                                      <div className="flex items-center gap-3 flex-wrap">
+                                        <Select
+                                          value={selectedContacts[ticket.id] || "all"}
+                                          onValueChange={(value) => handleContactSelection(ticket.id, value)}
+                                        >
+                                          <SelectTrigger className="flex-1 min-w-[200px] glass border-border/50 bg-background/80 z-50">
+                                            <SelectValue placeholder="Pilih kontak" />
+                                          </SelectTrigger>
+                                          <SelectContent className="z-[100] bg-background border-border/50">
+                                            <SelectItem value="all">
+                                              Semua Kontak Kategori ({getSuggestedContacts(ticket.kategori).length})
+                                            </SelectItem>
+                                            {getSuggestedContacts(ticket.kategori).map((contact) => (
+                                              <SelectItem key={contact.id} value={contact.id}>
+                                                {contact.name} ({contact.contact_type === "email" ? "📧" : "📱"} {contact.contact_value})
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        <Button
+                                          size="sm"
+                                          className="gradient-primary"
+                                          onClick={() => {
+                                            const contactId = selectedContacts[ticket.id];
+                                            handleManualForward(
+                                              ticket, 
+                                              contactId && contactId !== "all" ? contactId : undefined
+                                            );
+                                          }}
+                                        >
+                                          Kirim Sekarang
+                                        </Button>
                                       </div>
-                                      <Button
-                                        size="sm"
-                                        className="gradient-primary"
-                                        onClick={() => handleManualForward(ticket)}
-                                      >
-                                        Kirim Manual
-                                      </Button>
+
+                                      {/* Info kontak yang dipilih */}
+                                      {selectedContacts[ticket.id] && selectedContacts[ticket.id] !== "all" && (
+                                        <div className="p-2 glass-card rounded-lg">
+                                          <p className="text-xs text-muted-foreground">
+                                            📤 Akan dikirim ke:{" "}
+                                            <span className="font-semibold text-foreground">
+                                              {forwardingContacts.find(c => c.id === selectedContacts[ticket.id])?.name}
+                                            </span>
+                                          </p>
+                                        </div>
+                                      )}
+
+                                      {(!selectedContacts[ticket.id] || selectedContacts[ticket.id] === "all") && (
+                                        <div className="p-2 glass-card rounded-lg">
+                                          <p className="text-xs text-muted-foreground">
+                                            📤 Akan dikirim ke semua {getSuggestedContacts(ticket.kategori).length} kontak aktif kategori ini
+                                          </p>
+                                        </div>
+                                      )}
                                     </div>
                                   )}
                                 </div>
