@@ -221,14 +221,14 @@ export const AdminDashboard = ({ activeTab }: AdminDashboardProps) => {
   });
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
       {activeTab === "tickets" && (
         <>
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold gradient-text">Kelola Tiket</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Teruskan tiket keluhan ke pihak berwenang
+              <h1 className="text-3xl font-bold text-foreground">Kelola Tiket</h1>
+              <p className="text-muted-foreground mt-1">
+                Kelola dan teruskan tiket keluhan ke pihak berwenang
               </p>
             </div>
             <NotificationBell />
@@ -423,8 +423,8 @@ export const AdminDashboard = ({ activeTab }: AdminDashboardProps) => {
       {activeTab === "stats" && (
         <>
           <div className="mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold gradient-text">Statistik</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h1 className="text-3xl font-bold text-foreground">Statistik Pengaduan</h1>
+            <p className="text-muted-foreground mt-1">
               Lihat performa sistem penerusan otomatis
             </p>
           </div>
@@ -435,8 +435,8 @@ export const AdminDashboard = ({ activeTab }: AdminDashboardProps) => {
       {activeTab === "analytics" && (
         <>
           <div className="mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold gradient-text">Analitik</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h1 className="text-3xl font-bold text-foreground">Analitik Dashboard</h1>
+            <p className="text-muted-foreground mt-1">
               Dashboard analitik keluhan kampus
             </p>
           </div>
@@ -447,9 +447,9 @@ export const AdminDashboard = ({ activeTab }: AdminDashboardProps) => {
       {activeTab === "templates" && (
         <>
           <div className="mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold gradient-text">Template Pesan</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Kelola template untuk email dan WhatsApp
+            <h1 className="text-3xl font-bold text-foreground">Template Pesan</h1>
+            <p className="text-muted-foreground mt-1">
+              Kelola template untuk email dan WhatsApp otomatis
             </p>
           </div>
           <MessageTemplates />
@@ -459,9 +459,9 @@ export const AdminDashboard = ({ activeTab }: AdminDashboardProps) => {
       {activeTab === "contacts" && (
         <>
           <div className="mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold gradient-text">Kontak Penerusan</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Kelola kontak untuk auto-forward tiket
+            <h1 className="text-3xl font-bold text-foreground">Manajemen Kontak</h1>
+            <p className="text-muted-foreground mt-1">
+              Kelola kontak pihak berwenang untuk auto-forward tiket
             </p>
           </div>
           <ContactManagement />
@@ -471,9 +471,9 @@ export const AdminDashboard = ({ activeTab }: AdminDashboardProps) => {
       {activeTab === "api" && (
         <>
           <div className="mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold gradient-text">API Settings</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Konfigurasi API keys untuk integrasi
+            <h1 className="text-3xl font-bold text-foreground">Pengaturan API</h1>
+            <p className="text-muted-foreground mt-1">
+              Konfigurasi API keys untuk integrasi eksternal
             </p>
           </div>
           <ApiSettings />
@@ -483,9 +483,9 @@ export const AdminDashboard = ({ activeTab }: AdminDashboardProps) => {
       {activeTab === "admins" && (
         <>
           <div className="mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold gradient-text">Manajemen Admin</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Kelola sub-admin dan permissions
+            <h1 className="text-3xl font-bold text-foreground">Manajemen Sub-Admin</h1>
+            <p className="text-muted-foreground mt-1">
+              Kelola akses dan permission admin sistem
             </p>
           </div>
           <SubAdminManagement />

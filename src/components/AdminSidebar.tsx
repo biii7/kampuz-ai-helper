@@ -42,26 +42,26 @@ export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSideba
   };
 
   return (
-    <Sidebar className={`${collapsed ? "w-16" : "w-64"} glass border-r border-border/50`} collapsible="icon">
+    <Sidebar className={`${collapsed ? "w-16" : "w-64"} glass border-r border-border/50 h-screen`} collapsible="icon">
       {/* Logo/Brand Header */}
       <SidebarHeader className="border-b border-border/50 p-4">
         <div className="flex items-center gap-3">
-          <div className="glass-card p-2 gradient-primary rounded-xl">
+          <div className="glass-card p-2 gradient-primary rounded-xl flex-shrink-0">
             <Shield className="h-6 w-6 text-white" />
           </div>
           {!collapsed && (
-            <div className="flex flex-col">
-              <span className="font-bold text-foreground text-base">Admin Panel</span>
-              <span className="text-xs text-muted-foreground">Sistem Keluhan</span>
+            <div className="flex flex-col min-w-0">
+              <span className="font-bold text-foreground text-base truncate">Admin Panel</span>
+              <span className="text-xs text-muted-foreground truncate">Sistem Keluhan</span>
             </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="bg-transparent pt-4">
+      <SidebarContent className="bg-transparent">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1 px-2">
+            <SidebarMenu className="space-y-1 px-2 py-4">
               {/* Navigation Items - Chat & History */}
               <SidebarMenuItem>
                 <SidebarMenuButton
@@ -94,7 +94,7 @@ export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSideba
               </SidebarMenuItem>
 
               {/* Separator */}
-              <div className="my-2">
+              <div className="my-4">
                 <Separator />
               </div>
 
@@ -125,12 +125,12 @@ export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSideba
       </SidebarContent>
 
       {/* User Footer */}
-      <SidebarFooter className="border-t border-border/50 p-4">
+      <SidebarFooter className="border-t border-border/50 p-4 mt-auto">
         <div className={`glass-card p-3 rounded-xl ${collapsed ? "flex justify-center" : ""}`}>
           {!collapsed ? (
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0">
                   <User className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
