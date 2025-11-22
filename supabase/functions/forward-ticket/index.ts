@@ -158,10 +158,13 @@ serve(async (req) => {
       }
     }
 
-    // Update ticket as auto-forwarded
+    // Update ticket as auto-forwarded and move from pending to diproses
     await supabaseClient
       .from('tickets')
-      .update({ auto_forwarded: true })
+      .update({ 
+        auto_forwarded: true,
+        status: ticket.status === 'pending' ? 'diproses' : ticket.status,
+      })
       .eq('id', ticketId);
 
     return new Response(
