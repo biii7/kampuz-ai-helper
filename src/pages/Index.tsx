@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ChatInterface } from "@/components/ChatInterface";
 import { TicketHistory } from "@/components/TicketHistory";
 import { AdminDashboard } from "@/components/AdminDashboard";
-import { GraduationCap, MessageSquare, Ticket, Sparkles, Shield, Menu } from "lucide-react";
+import { GraduationCap, Moon, Ticket, Sparkles, Shield, Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
@@ -77,7 +77,7 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">Deteksi otomatis keluhan atau informasi</p>
               </div>
               <div className="glass-card p-6 hover:scale-105 transition-transform">
-                <MessageSquare className="h-8 w-8 text-secondary mx-auto mb-4" />
+                <Moon className="h-8 w-8 text-secondary mx-auto mb-4" />
                 <h3 className="font-semibold text-lg mb-2">RAG System</h3>
                 <p className="text-sm text-muted-foreground">Jawaban berdasarkan dokumen kampus</p>
               </div>
@@ -95,7 +95,7 @@ const Index = () => {
                 className="gradient-primary text-lg px-8 py-6 rounded-full glow-hover shadow-2xl"
                 onClick={() => setView("chat")}
               >
-                <MessageSquare className="mr-2 h-5 w-5" />
+                <Moon className="mr-2 h-5 w-5" />
                 Mulai Chat
               </Button>
               <Button
@@ -157,7 +157,7 @@ const Index = () => {
                       onClick={() => setView("chat")}
                       size="sm"
                     >
-                      <MessageSquare className="h-4 w-4 mr-2" />
+                      <Moon className="h-4 w-4 mr-2" />
                       <span className="hidden md:inline">Chat</span>
                     </Button>
                     <Button

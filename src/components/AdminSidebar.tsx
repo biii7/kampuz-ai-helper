@@ -1,4 +1,4 @@
-import { FileText, TrendingUp, BarChart3, Mail, Send, Settings, Users, Shield, LogOut, User, MessageSquare, History, Menu, X } from "lucide-react";
+import { FileText, TrendingUp, BarChart3, Mail, Send, Settings, Users, Shield, LogOut, User, Moon, History, Menu, X } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -23,7 +23,7 @@ interface AdminSidebarProps {
 }
 
 const navigationItems = [
-  { id: "chat", label: "Chat Bot", icon: MessageSquare, action: "navigate" as const },
+  { id: "chat", label: "Chat Bot", icon: Moon, action: "navigate" as const },
   { id: "history", label: "Riwayat Tiket", icon: History, action: "navigate" as const },
 ];
 
