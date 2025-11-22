@@ -13,7 +13,7 @@ import uinLogo from "@/assets/uin-logo.png";
 
 const Index = () => {
   const [view, setView] = useState<"hero" | "chat" | "tickets" | "admin">("hero");
-  const [adminTab, setAdminTab] = useState<"tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins">("tickets");
+  const [adminTab, setAdminTab] = useState<"tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins" | "documents">("tickets");
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
