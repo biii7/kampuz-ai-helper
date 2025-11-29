@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.forward-ticket]
 verify_jwt = false
+
+[functions.parse-pdf-document]
+verify_jwt = false
