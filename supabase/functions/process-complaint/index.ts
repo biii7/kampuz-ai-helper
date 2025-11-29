@@ -144,27 +144,67 @@ Balas HANYA dengan JSON tanpa penjelasan. Contoh:
 
     // RAG untuk pertanyaan informasi
     if (type === "rag") {
-      // Cari dokumen yang relevan
-      const { data: documents } = await supabase
+      console.log('RAG request received for:', message);
+      
+      // Ambil SEMUA dokumen kampus yang tersedia
+      const { data: documents, error: docError } = await supabase
         .from("campus_documents")
         .select("*")
-        .limit(3);
+        .order("created_at", { ascending: false });
 
-      let context = "";
-      if (documents && documents.length > 0) {
-        context = documents.map(doc => `${doc.title}:\n${doc.content}`).join("\n\n");
-      } else {
-        context = "Belum ada dokumen kampus yang tersedia. Silakan jawab dengan informasi umum.";
+      if (docError) {
+        console.error('Error fetching documents:', docError);
       }
 
-      const ragPrompt = `Kamu adalah asisten informasi kampus. Gunakan konteks dokumen berikut untuk menjawab pertanyaan.
+      let context = "";
+      let documentCount = 0;
 
-Konteks Dokumen:
+      if (documents && documents.length > 0) {
+        documentCount = documents.length;
+        
+        // Gabungkan semua dokumen sebagai konteks
+        // Batasi panjang setiap dokumen untuk menghindari token limit
+        context = documents.map(doc => {
+          const title = doc.title || 'Dokumen Tanpa Judul';
+          const category = doc.metadata?.category || '';
+          const source = doc.metadata?.source || '';
+          
+          // Batasi konten per dokumen maksimal 2000 karakter
+          const content = doc.content?.substring(0, 2000) || '';
+          
+          return `=== ${title} ===
+Kategori: ${category}
+Sumber: ${source}
+
+${content}
+`;
+        }).join("\n\n");
+        
+        console.log(`Using ${documentCount} documents as context, total length: ${context.length} chars`);
+      } else {
+        context = "Belum ada dokumen kampus yang tersedia.";
+        console.log('No documents found in database');
+      }
+
+      const ragPrompt = `Kamu adalah asisten informasi kampus UIN Alauddin Makassar. 
+
+PENTING: Gunakan HANYA informasi dari dokumen di bawah ini untuk menjawab pertanyaan. Jangan membuat informasi baru atau menambahkan fakta yang tidak ada dalam dokumen.
+
+=== DOKUMEN KAMPUS (${documentCount} dokumen) ===
 ${context}
+=== AKHIR DOKUMEN ===
 
-Pertanyaan: ${message}
+Pertanyaan User: ${message}
 
-Jawab dengan ramah dan informatif. Jika informasi tidak ada dalam dokumen, beritahu dengan sopan dan sarankan untuk menghubungi bagian terkait.`;
+Instruksi:
+1. Baca semua dokumen dengan teliti
+2. Cari informasi yang RELEVAN dengan pertanyaan
+3. Jawab dengan bahasa yang ramah, jelas, dan Islamic
+4. Jika informasi ADA dalam dokumen: berikan jawaban lengkap dengan menyebutkan sumber/kategori dokumen
+5. Jika informasi TIDAK ADA dalam dokumen: katakan dengan jujur "Mohon maaf, informasi tersebut belum tersedia dalam dokumen kampus kami. Silakan menghubungi bagian [sebutkan bagian yang relevan] untuk informasi lebih lanjut."
+6. Gunakan salam Islamic yang sesuai (Assalamu'alaikum, Alhamdulillah, dll)
+
+Jawaban:`;
 
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -175,17 +215,25 @@ Jawab dengan ramah dan informatif. Jika informasi tidak ada dalam dokumen, berit
         body: JSON.stringify({
           model: "google/gemini-2.5-flash",
           messages: [{ role: "user", content: ragPrompt }],
+          temperature: 0.3, // Lower temperature untuk jawaban yang lebih konsisten dan faktual
         }),
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('AI response error:', response.status, errorText);
         throw new Error("RAG error");
       }
 
       const data = await response.json();
       const answer = data.choices[0]?.message?.content;
       
-      return new Response(JSON.stringify({ answer }), {
+      console.log('RAG response generated successfully');
+      
+      return new Response(JSON.stringify({ 
+        answer,
+        documentsUsed: documentCount 
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
