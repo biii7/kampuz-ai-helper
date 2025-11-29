@@ -14,7 +14,6 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
@@ -28,64 +27,37 @@ serve(async (req) => {
       throw new Error('Failed to download PDF file');
     }
 
-    const arrayBuffer = await fileResponse.arrayBuffer();
-    const base64Pdf = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    const pdfBuffer = await fileResponse.arrayBuffer();
+    console.log('PDF downloaded, size:', pdfBuffer.byteLength, 'bytes');
 
-    // Use Lovable AI to extract text from PDF
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a PDF text extractor. Extract all text content from the PDF document provided. Return only the extracted text without any additional commentary or formatting.'
-          },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: 'Extract all text from this PDF document:'
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:application/pdf;base64,${base64Pdf}`
-                }
-              }
-            ]
-          }
-        ],
-      }),
-    });
+    // Use pdf-parse library to extract text
+    const pdfParse = (await import('https://esm.sh/pdf-parse@1.1.1')).default;
+    
+    // Convert ArrayBuffer to Uint8Array for pdf-parse
+    const uint8Array = new Uint8Array(pdfBuffer);
+    const pdfData = await pdfParse(uint8Array);
+    const extractedText = pdfData.text;
 
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error('AI API error:', aiResponse.status, errorText);
-      throw new Error(`AI extraction failed: ${aiResponse.status}`);
+    console.log('Successfully extracted text from PDF');
+    console.log('Number of pages:', pdfData.numpages);
+    console.log('Text length:', extractedText.length, 'characters');
+
+    if (!extractedText || extractedText.trim().length === 0) {
+      throw new Error('No text could be extracted from PDF. The PDF might be image-based or corrupted.');
     }
-
-    const aiData = await aiResponse.json();
-    const extractedText = aiData.choices[0].message.content;
-
-    console.log('Successfully extracted text from PDF, length:', extractedText.length);
 
     // Save to database
     const { data, error } = await supabase
       .from('campus_documents')
       .insert({
         title,
-        content: extractedText,
+        content: extractedText.trim(),
         file_url: fileUrl,
         metadata: {
           category,
           source,
           file_type: 'pdf',
+          pages: pdfData.numpages,
           extracted_at: new Date().toISOString()
         }
       })
@@ -103,7 +75,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         document: data,
-        extractedLength: extractedText.length 
+        extractedLength: extractedText.length,
+        pages: pdfData.numpages
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
