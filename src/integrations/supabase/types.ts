@@ -38,6 +38,7 @@ export type Database = {
       campus_documents: {
         Row: {
           content: string
+          content_embedding: string | null
           created_at: string
           file_url: string | null
           id: string
@@ -46,6 +47,7 @@ export type Database = {
         }
         Insert: {
           content: string
+          content_embedding?: string | null
           created_at?: string
           file_url?: string | null
           id?: string
@@ -54,6 +56,7 @@ export type Database = {
         }
         Update: {
           content?: string
+          content_embedding?: string | null
           created_at?: string
           file_url?: string | null
           id?: string
@@ -169,6 +172,36 @@ export type Database = {
           },
         ]
       }
+      rag_cache: {
+        Row: {
+          access_count: number | null
+          answer: string
+          created_at: string | null
+          documents_used: number
+          id: string
+          question: string
+          updated_at: string | null
+        }
+        Insert: {
+          access_count?: number | null
+          answer: string
+          created_at?: string | null
+          documents_used?: number
+          id?: string
+          question: string
+          updated_at?: string | null
+        }
+        Update: {
+          access_count?: number | null
+          answer?: string
+          created_at?: string | null
+          documents_used?: number
+          id?: string
+          question?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       system_settings: {
         Row: {
           id: string
@@ -277,6 +310,22 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      match_documents: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          content: string
+          created_at: string
+          file_url: string
+          id: string
+          metadata: Json
+          similarity: number
+          title: string
+        }[]
       }
     }
     Enums: {

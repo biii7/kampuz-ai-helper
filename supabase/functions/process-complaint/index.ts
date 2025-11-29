@@ -142,37 +142,115 @@ Balas HANYA dengan JSON tanpa penjelasan. Contoh:
       });
     }
 
-    // RAG untuk pertanyaan informasi
+    // RAG untuk pertanyaan informasi dengan caching dan semantic search
     if (type === "rag") {
       console.log('RAG request received for:', message);
       
-      // Ambil SEMUA dokumen kampus yang tersedia
-      const { data: documents, error: docError } = await supabase
-        .from("campus_documents")
+      // Check cache first
+      const normalizedQuestion = message.toLowerCase().trim();
+      const { data: cachedAnswer } = await supabase
+        .from("rag_cache")
         .select("*")
-        .order("created_at", { ascending: false });
+        .ilike("question", `%${normalizedQuestion}%`)
+        .order("access_count", { ascending: false })
+        .limit(1)
+        .single();
 
-      if (docError) {
-        console.error('Error fetching documents:', docError);
+      if (cachedAnswer) {
+        console.log('Cache hit! Returning cached answer');
+        // Update cache access count
+        await supabase
+          .from("rag_cache")
+          .update({ 
+            access_count: cachedAnswer.access_count + 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", cachedAnswer.id);
+
+        return new Response(JSON.stringify({ 
+          answer: cachedAnswer.answer,
+          documentsUsed: cachedAnswer.documents_used,
+          cached: true
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      console.log('Cache miss, generating new answer with semantic search');
+
+      // Generate embedding for the question
+      let queryEmbedding = null;
+      try {
+        const embeddingResponse = await fetch("https://api.openai.com/v1/embeddings", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "text-embedding-3-small",
+            input: message,
+          }),
+        });
+
+        if (embeddingResponse.ok) {
+          const embeddingData = await embeddingResponse.json();
+          queryEmbedding = embeddingData.data[0].embedding;
+          console.log('Query embedding generated successfully');
+        }
+      } catch (embError) {
+        console.error('Error generating query embedding:', embError);
+        // Continue without semantic search if embedding fails
+      }
+
+      let documents;
+      let documentCount = 0;
+
+      // Use semantic search if embedding available
+      if (queryEmbedding) {
+        console.log('Using semantic search with vector similarity');
+        const { data: semanticDocs, error: semanticError } = await supabase.rpc(
+          'match_documents',
+          {
+            query_embedding: queryEmbedding,
+            match_threshold: 0.5,
+            match_count: 10
+          }
+        );
+
+        if (!semanticError && semanticDocs && semanticDocs.length > 0) {
+          documents = semanticDocs;
+          console.log(`Semantic search found ${documents.length} relevant documents`);
+        }
+      }
+
+      // Fallback to fetching all documents if semantic search fails
+      if (!documents || documents.length === 0) {
+        console.log('Using fallback: fetching all documents');
+        const { data: allDocs, error: docError } = await supabase
+          .from("campus_documents")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (docError) {
+          console.error('Error fetching documents:', docError);
+        }
+        documents = allDocs || [];
       }
 
       let context = "";
-      let documentCount = 0;
+      documentCount = documents.length;
 
-      if (documents && documents.length > 0) {
-        documentCount = documents.length;
-        
-        // Gabungkan semua dokumen sebagai konteks
-        // Batasi panjang setiap dokumen untuk menghindari token limit
-        context = documents.map(doc => {
+      if (documents.length > 0) {
+        // Build context from documents
+        context = documents.map((doc: any) => {
           const title = doc.title || 'Dokumen Tanpa Judul';
           const category = doc.metadata?.category || '';
           const source = doc.metadata?.source || '';
-          
-          // Batasi konten per dokumen maksimal 2000 karakter
           const content = doc.content?.substring(0, 2000) || '';
+          const similarity = doc.similarity ? ` (Relevansi: ${(doc.similarity * 100).toFixed(1)}%)` : '';
           
-          return `=== ${title} ===
+          return `=== ${title}${similarity} ===
 Kategori: ${category}
 Sumber: ${source}
 
@@ -229,10 +307,27 @@ Jawaban:`;
       const answer = data.choices[0]?.message?.content;
       
       console.log('RAG response generated successfully');
+
+      // Cache the answer for future use
+      try {
+        await supabase
+          .from("rag_cache")
+          .insert({
+            question: normalizedQuestion,
+            answer,
+            documents_used: documentCount,
+            access_count: 1
+          });
+        console.log('Answer cached successfully');
+      } catch (cacheError) {
+        console.error('Error caching answer:', cacheError);
+        // Don't fail the request if caching fails
+      }
       
       return new Response(JSON.stringify({ 
         answer,
-        documentsUsed: documentCount 
+        documentsUsed: documentCount,
+        cached: false
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
