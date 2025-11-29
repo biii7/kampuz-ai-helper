@@ -3,7 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { Loader2, FileText, MapPin, User, Calendar, Tag, AlertCircle, Search, Filter } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, FileText, MapPin, User, Calendar, Tag, AlertCircle, Search, Filter, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -54,6 +55,35 @@ export const TicketHistory = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const exportToCSV = () => {
+    const headers = ["ID", "NIM", "Kategori", "Lokasi", "Subjek", "Deskripsi", "Status", "Waktu"];
+    const csvData = filteredTickets.map(ticket => [
+      ticket.id,
+      ticket.nim,
+      ticket.kategori,
+      ticket.lokasi,
+      ticket.subjek,
+      ticket.deskripsi,
+      ticket.status,
+      format(new Date(ticket.waktu), "dd/MM/yyyy HH:mm", { locale: id })
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...csvData.map(row => row.map(cell => `"${cell}"`).join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `keluhan_${format(new Date(), "yyyy-MM-dd")}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const filteredTickets = tickets.filter((ticket) => {
@@ -120,15 +150,27 @@ export const TicketHistory = () => {
     <div className="glass-card max-w-6xl mx-auto overflow-hidden card-elevated">
       {/* Header */}
       <div className="gradient-primary p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold text-white">Riwayat Tiket Keluhan</h2>
             <p className="text-white/80 text-sm mt-1">
               {filteredTickets.length} dari {tickets.length} tiket
             </p>
           </div>
-          <div className="glass-card px-4 py-2 rounded-full">
-            <FileText className="h-6 w-6 text-white" />
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={exportToCSV}
+              variant="secondary"
+              size="sm"
+              className="gap-2 bg-white/20 hover:bg-white/30 text-white border-white/30"
+              disabled={filteredTickets.length === 0}
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden md:inline">Export CSV</span>
+            </Button>
+            <div className="glass-card px-4 py-2 rounded-full">
+              <FileText className="h-6 w-6 text-white" />
+            </div>
           </div>
         </div>
       </div>
