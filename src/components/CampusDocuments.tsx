@@ -6,9 +6,10 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { BookOpen, Plus, Pencil, Trash2, FileText, Calendar, Search } from "lucide-react";
+import { BookOpen, Plus, Pencil, Trash2, FileText, Calendar, Search, Upload, Loader2, Download } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 
@@ -18,6 +19,7 @@ interface CampusDocument {
   content: string;
   metadata: any;
   created_at: string;
+  file_url?: string;
 }
 
 export const CampusDocuments = () => {
@@ -26,6 +28,13 @@ export const CampusDocuments = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingDoc, setEditingDoc] = useState<CampusDocument | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadFormData, setUploadFormData] = useState({
+    title: "",
+    source: "",
+    category: ""
+  });
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -137,6 +146,78 @@ export const CampusDocuments = () => {
     setEditingDoc(null);
   };
 
+  const handleFileUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!uploadFile) {
+      toast.error("Pilih file PDF terlebih dahulu");
+      return;
+    }
+
+    if (!uploadFile.type.includes('pdf')) {
+      toast.error("Hanya file PDF yang diperbolehkan");
+      return;
+    }
+
+    if (!uploadFormData.title.trim()) {
+      toast.error("Judul dokumen harus diisi");
+      return;
+    }
+
+    setIsUploading(true);
+    
+    try {
+      // Upload file to Supabase Storage
+      const fileName = `${Date.now()}-${uploadFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('campus-documents')
+        .upload(fileName, uploadFile);
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error('Gagal mengupload file');
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('campus-documents')
+        .getPublicUrl(fileName);
+
+      toast.info("Sedang memproses PDF...", { duration: 5000 });
+
+      // Call edge function to parse PDF
+      const { data: parseData, error: parseError } = await supabase.functions.invoke('parse-pdf-document', {
+        body: {
+          fileUrl: publicUrl,
+          title: uploadFormData.title,
+          category: uploadFormData.category || "Umum",
+          source: uploadFormData.source || "Upload PDF"
+        }
+      });
+
+      if (parseError) {
+        console.error('Parse error:', parseError);
+        throw new Error('Gagal memproses PDF');
+      }
+
+      if (!parseData.success) {
+        throw new Error(parseData.error || 'Gagal memproses PDF');
+      }
+
+      toast.success(`PDF berhasil diproses! (${parseData.extractedLength} karakter terbaca)`);
+      setUploadFile(null);
+      setUploadFormData({ title: "", source: "", category: "" });
+      setIsDialogOpen(false);
+      loadDocuments();
+
+    } catch (error) {
+      console.error('Error uploading PDF:', error);
+      toast.error(error instanceof Error ? error.message : "Gagal mengupload PDF");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const filteredDocuments = documents.filter(doc =>
     doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     doc.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -167,13 +248,27 @@ export const CampusDocuments = () => {
                 Tambah Dokumen
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl glass-card">
+            <DialogContent className="max-w-3xl glass-card max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-2xl">
                   {editingDoc ? "Edit Dokumen" : "Tambah Dokumen Baru"}
                 </DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              
+              <Tabs defaultValue="manual" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="manual">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Input Manual
+                  </TabsTrigger>
+                  <TabsTrigger value="upload">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload PDF
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="manual" className="space-y-4">
+                  <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
                     <label className="text-sm font-medium text-foreground">Judul Dokumen *</label>
@@ -233,6 +328,110 @@ export const CampusDocuments = () => {
                   </Button>
                 </div>
               </form>
+                </TabsContent>
+
+                <TabsContent value="upload" className="space-y-4">
+                  <form onSubmit={handleFileUpload} className="space-y-4">
+                    <div className="glass-card p-6 border-2 border-dashed border-primary/30 rounded-lg">
+                      <div className="text-center space-y-4">
+                        <Upload className="h-12 w-12 text-primary mx-auto" />
+                        <div>
+                          <label className="cursor-pointer">
+                            <input
+                              type="file"
+                              accept="application/pdf"
+                              onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                              className="hidden"
+                            />
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors">
+                              <Upload className="h-4 w-4" />
+                              {uploadFile ? uploadFile.name : "Pilih File PDF"}
+                            </div>
+                          </label>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Maksimal 50MB • Format: PDF
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium text-foreground">Judul Dokumen *</label>
+                        <Input
+                          value={uploadFormData.title}
+                          onChange={(e) => setUploadFormData({ ...uploadFormData, title: e.target.value })}
+                          placeholder="Contoh: Panduan Akademik 2024"
+                          className="glass border-border/50 mt-1"
+                          required
+                          disabled={isUploading}
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-foreground">Kategori</label>
+                          <Input
+                            value={uploadFormData.category}
+                            onChange={(e) => setUploadFormData({ ...uploadFormData, category: e.target.value })}
+                            placeholder="Contoh: Akademik, Fasilitas"
+                            className="glass border-border/50 mt-1"
+                            disabled={isUploading}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground">Sumber</label>
+                          <Input
+                            value={uploadFormData.source}
+                            onChange={(e) => setUploadFormData({ ...uploadFormData, source: e.target.value })}
+                            placeholder="Contoh: Website, Dokumen Resmi"
+                            className="glass border-border/50 mt-1"
+                            disabled={isUploading}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="glass-card p-4 bg-primary/5 border border-primary/20">
+                      <p className="text-sm text-muted-foreground">
+                        📄 File PDF akan diproses secara otomatis oleh AI untuk mengekstrak teks. 
+                        Proses ini membutuhkan waktu beberapa detik tergantung ukuran file.
+                      </p>
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setIsDialogOpen(false);
+                          setUploadFile(null);
+                          setUploadFormData({ title: "", source: "", category: "" });
+                        }}
+                        disabled={isUploading}
+                      >
+                        Batal
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        className="gradient-primary"
+                        disabled={isUploading || !uploadFile}
+                      >
+                        {isUploading ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Memproses...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 mr-2" />
+                            Upload & Proses
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </TabsContent>
+              </Tabs>
             </DialogContent>
           </Dialog>
         </div>
@@ -322,6 +521,17 @@ export const CampusDocuments = () => {
                             <FileText className="h-3 w-3" />
                             {doc.metadata.source}
                           </div>
+                        )}
+                        {doc.file_url && (
+                          <a 
+                            href={doc.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-primary hover:underline"
+                          >
+                            <Download className="h-3 w-3" />
+                            Download PDF
+                          </a>
                         )}
                       </div>
                     </div>
