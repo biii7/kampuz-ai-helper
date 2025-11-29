@@ -9,9 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { BookOpen, Plus, Pencil, Trash2, FileText, Calendar, Search, Upload, Loader2, Download } from "lucide-react";
+import { BookOpen, Plus, Pencil, Trash2, FileText, Calendar, Search, Upload, Loader2, Download, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import { PdfViewer } from "./PdfViewer";
+import { Progress } from "@/components/ui/progress";
 
 interface CampusDocument {
   id: string;
@@ -22,6 +24,13 @@ interface CampusDocument {
   file_url?: string;
 }
 
+interface UploadProgress {
+  file: File;
+  progress: number;
+  status: 'pending' | 'uploading' | 'processing' | 'success' | 'error';
+  error?: string;
+}
+
 export const CampusDocuments = () => {
   const [documents, setDocuments] = useState<CampusDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,12 +38,13 @@ export const CampusDocuments = () => {
   const [editingDoc, setEditingDoc] = useState<CampusDocument | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [uploadFormData, setUploadFormData] = useState({
-    title: "",
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress[]>([]);
+  const [bulkUploadFormData, setBulkUploadFormData] = useState({
     source: "",
     category: ""
   });
+  const [previewPdf, setPreviewPdf] = useState<{ url: string; title: string } | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -146,76 +156,121 @@ export const CampusDocuments = () => {
     setEditingDoc(null);
   };
 
-  const handleFileUpload = async (e: React.FormEvent) => {
+  const handleBulkUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!uploadFile) {
-      toast.error("Pilih file PDF terlebih dahulu");
+    if (uploadFiles.length === 0) {
+      toast.error("Pilih minimal 1 file PDF");
       return;
     }
 
-    if (!uploadFile.type.includes('pdf')) {
+    const invalidFiles = uploadFiles.filter(f => !f.type.includes('pdf'));
+    if (invalidFiles.length > 0) {
       toast.error("Hanya file PDF yang diperbolehkan");
-      return;
-    }
-
-    if (!uploadFormData.title.trim()) {
-      toast.error("Judul dokumen harus diisi");
       return;
     }
 
     setIsUploading(true);
     
-    try {
-      // Upload file to Supabase Storage
-      const fileName = `${Date.now()}-${uploadFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('campus-documents')
-        .upload(fileName, uploadFile);
+    // Initialize progress tracking
+    const progressList: UploadProgress[] = uploadFiles.map(file => ({
+      file,
+      progress: 0,
+      status: 'pending'
+    }));
+    setUploadProgress(progressList);
 
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw new Error('Gagal mengupload file');
-      }
+    // Process files one by one
+    for (let i = 0; i < uploadFiles.length; i++) {
+      const file = uploadFiles[i];
+      
+      try {
+        // Update status to uploading
+        setUploadProgress(prev => prev.map((p, idx) => 
+          idx === i ? { ...p, status: 'uploading', progress: 25 } : p
+        ));
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('campus-documents')
-        .getPublicUrl(fileName);
+        // Generate title from filename if not provided
+        const title = file.name.replace('.pdf', '').replace(/[-_]/g, ' ');
+        
+        // Upload file to Supabase Storage
+        const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+        const { error: uploadError } = await supabase.storage
+          .from('campus-documents')
+          .upload(fileName, file);
 
-      toast.info("Sedang memproses PDF...", { duration: 5000 });
-
-      // Call edge function to parse PDF
-      const { data: parseData, error: parseError } = await supabase.functions.invoke('parse-pdf-document', {
-        body: {
-          fileUrl: publicUrl,
-          title: uploadFormData.title,
-          category: uploadFormData.category || "Umum",
-          source: uploadFormData.source || "Upload PDF"
+        if (uploadError) {
+          throw new Error('Gagal mengupload file');
         }
-      });
 
-      if (parseError) {
-        console.error('Parse error:', parseError);
-        throw new Error('Gagal memproses PDF');
+        // Update progress
+        setUploadProgress(prev => prev.map((p, idx) => 
+          idx === i ? { ...p, progress: 50 } : p
+        ));
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('campus-documents')
+          .getPublicUrl(fileName);
+
+        // Update status to processing
+        setUploadProgress(prev => prev.map((p, idx) => 
+          idx === i ? { ...p, status: 'processing', progress: 75 } : p
+        ));
+
+        // Call edge function to parse PDF
+        const { data: parseData, error: parseError } = await supabase.functions.invoke('parse-pdf-document', {
+          body: {
+            fileUrl: publicUrl,
+            title,
+            category: bulkUploadFormData.category || "Umum",
+            source: bulkUploadFormData.source || "Upload PDF"
+          }
+        });
+
+        if (parseError || !parseData.success) {
+          throw new Error(parseData?.error || 'Gagal memproses PDF');
+        }
+
+        // Success
+        setUploadProgress(prev => prev.map((p, idx) => 
+          idx === i ? { ...p, status: 'success', progress: 100 } : p
+        ));
+
+      } catch (error) {
+        console.error(`Error uploading ${file.name}:`, error);
+        setUploadProgress(prev => prev.map((p, idx) => 
+          idx === i ? { 
+            ...p, 
+            status: 'error', 
+            progress: 0,
+            error: error instanceof Error ? error.message : 'Gagal mengupload'
+          } : p
+        ));
       }
+    }
 
-      if (!parseData.success) {
-        throw new Error(parseData.error || 'Gagal memproses PDF');
-      }
+    // Show final results
+    const successCount = uploadProgress.filter(p => p.status === 'success').length;
+    const errorCount = uploadProgress.filter(p => p.status === 'error').length;
+    
+    if (successCount > 0) {
+      toast.success(`${successCount} dokumen berhasil diupload!`);
+    }
+    if (errorCount > 0) {
+      toast.error(`${errorCount} dokumen gagal diupload`);
+    }
 
-      toast.success(`PDF berhasil diproses! (${parseData.extractedLength} karakter terbaca)`);
-      setUploadFile(null);
-      setUploadFormData({ title: "", source: "", category: "" });
+    setIsUploading(false);
+    
+    // Reset after a delay to show final status
+    setTimeout(() => {
+      setUploadFiles([]);
+      setUploadProgress([]);
+      setBulkUploadFormData({ source: "", category: "" });
       setIsDialogOpen(false);
       loadDocuments();
-
-    } catch (error) {
-      console.error('Error uploading PDF:', error);
-      toast.error(error instanceof Error ? error.message : "Gagal mengupload PDF");
-    } finally {
-      setIsUploading(false);
-    }
+    }, 2000);
   };
 
   const filteredDocuments = documents.filter(doc =>
@@ -331,7 +386,7 @@ export const CampusDocuments = () => {
                 </TabsContent>
 
                 <TabsContent value="upload" className="space-y-4">
-                  <form onSubmit={handleFileUpload} className="space-y-4">
+                  <form onSubmit={handleBulkUpload} className="space-y-4">
                     <div className="glass-card p-6 border-2 border-dashed border-primary/30 rounded-lg">
                       <div className="text-center space-y-4">
                         <Upload className="h-12 w-12 text-primary mx-auto" />
@@ -340,49 +395,96 @@ export const CampusDocuments = () => {
                             <input
                               type="file"
                               accept="application/pdf"
-                              onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                              multiple
+                              onChange={(e) => {
+                                const files = Array.from(e.target.files || []);
+                                setUploadFiles(files);
+                              }}
                               className="hidden"
                             />
                             <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors">
                               <Upload className="h-4 w-4" />
-                              {uploadFile ? uploadFile.name : "Pilih File PDF"}
+                              {uploadFiles.length > 0 
+                                ? `${uploadFiles.length} file dipilih` 
+                                : "Pilih File PDF (Multiple)"}
                             </div>
                           </label>
                           <p className="text-xs text-muted-foreground mt-2">
-                            Maksimal 50MB • Format: PDF
+                            Maksimal 50MB per file • Format: PDF • Multiple files
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-sm font-medium text-foreground">Judul Dokumen *</label>
-                        <Input
-                          value={uploadFormData.title}
-                          onChange={(e) => setUploadFormData({ ...uploadFormData, title: e.target.value })}
-                          placeholder="Contoh: Panduan Akademik 2024"
-                          className="glass border-border/50 mt-1"
-                          required
-                          disabled={isUploading}
-                        />
+                    {uploadFiles.length > 0 && (
+                      <div className="glass-card p-4 space-y-3">
+                        <h4 className="text-sm font-semibold text-foreground">File yang dipilih:</h4>
+                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                          {uploadFiles.map((file, index) => (
+                            <div key={index} className="flex items-center justify-between text-sm p-2 bg-muted/20 rounded">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <FileText className="h-4 w-4 text-primary shrink-0" />
+                                <span className="truncate">{file.name}</span>
+                              </div>
+                              <span className="text-xs text-muted-foreground shrink-0">
+                                {(file.size / 1024 / 1024).toFixed(2)} MB
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
+                    )}
+
+                    {uploadProgress.length > 0 && (
+                      <div className="glass-card p-4 space-y-3">
+                        <h4 className="text-sm font-semibold text-foreground">Progress Upload:</h4>
+                        <div className="space-y-3">
+                          {uploadProgress.map((item, index) => (
+                            <div key={index} className="space-y-2">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="truncate flex-1">{item.file.name}</span>
+                                <Badge 
+                                  variant={
+                                    item.status === 'success' ? 'default' :
+                                    item.status === 'error' ? 'destructive' :
+                                    'secondary'
+                                  }
+                                  className="ml-2"
+                                >
+                                  {item.status === 'pending' && 'Menunggu'}
+                                  {item.status === 'uploading' && 'Mengupload'}
+                                  {item.status === 'processing' && 'Memproses'}
+                                  {item.status === 'success' && '✓ Berhasil'}
+                                  {item.status === 'error' && '✗ Gagal'}
+                                </Badge>
+                              </div>
+                              <Progress value={item.progress} className="h-2" />
+                              {item.error && (
+                                <p className="text-xs text-destructive">{item.error}</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="text-sm font-medium text-foreground">Kategori</label>
+                          <label className="text-sm font-medium text-foreground">Kategori (untuk semua)</label>
                           <Input
-                            value={uploadFormData.category}
-                            onChange={(e) => setUploadFormData({ ...uploadFormData, category: e.target.value })}
+                            value={bulkUploadFormData.category}
+                            onChange={(e) => setBulkUploadFormData({ ...bulkUploadFormData, category: e.target.value })}
                             placeholder="Contoh: Akademik, Fasilitas"
                             className="glass border-border/50 mt-1"
                             disabled={isUploading}
                           />
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-foreground">Sumber</label>
+                          <label className="text-sm font-medium text-foreground">Sumber (untuk semua)</label>
                           <Input
-                            value={uploadFormData.source}
-                            onChange={(e) => setUploadFormData({ ...uploadFormData, source: e.target.value })}
+                            value={bulkUploadFormData.source}
+                            onChange={(e) => setBulkUploadFormData({ ...bulkUploadFormData, source: e.target.value })}
                             placeholder="Contoh: Website, Dokumen Resmi"
                             className="glass border-border/50 mt-1"
                             disabled={isUploading}
@@ -393,8 +495,8 @@ export const CampusDocuments = () => {
 
                     <div className="glass-card p-4 bg-primary/5 border border-primary/20">
                       <p className="text-sm text-muted-foreground">
-                        📄 File PDF akan diproses secara otomatis oleh AI untuk mengekstrak teks. 
-                        Proses ini membutuhkan waktu beberapa detik tergantung ukuran file.
+                        📄 Setiap file PDF akan diproses secara otomatis oleh AI untuk mengekstrak teks. 
+                        Judul dokumen akan diambil dari nama file. Proses akan berjalan satu per satu.
                       </p>
                     </div>
 
@@ -404,8 +506,9 @@ export const CampusDocuments = () => {
                         variant="outline"
                         onClick={() => {
                           setIsDialogOpen(false);
-                          setUploadFile(null);
-                          setUploadFormData({ title: "", source: "", category: "" });
+                          setUploadFiles([]);
+                          setUploadProgress([]);
+                          setBulkUploadFormData({ source: "", category: "" });
                         }}
                         disabled={isUploading}
                       >
@@ -414,17 +517,17 @@ export const CampusDocuments = () => {
                       <Button 
                         type="submit" 
                         className="gradient-primary"
-                        disabled={isUploading || !uploadFile}
+                        disabled={isUploading || uploadFiles.length === 0}
                       >
                         {isUploading ? (
                           <>
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Memproses...
+                            Memproses {uploadProgress.filter(p => p.status === 'success').length}/{uploadFiles.length}
                           </>
                         ) : (
                           <>
                             <Upload className="h-4 w-4 mr-2" />
-                            Upload & Proses
+                            Upload {uploadFiles.length} File
                           </>
                         )}
                       </Button>
@@ -537,6 +640,17 @@ export const CampusDocuments = () => {
                     </div>
 
                     <div className="flex gap-2 shrink-0">
+                      {doc.file_url && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setPreviewPdf({ url: doc.file_url!, title: doc.title })}
+                          className="glass hover:bg-primary/10"
+                          title="Preview PDF"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
@@ -561,6 +675,16 @@ export const CampusDocuments = () => {
           </ScrollArea>
         )}
       </div>
+
+      {/* PDF Viewer Modal */}
+      {previewPdf && (
+        <PdfViewer
+          fileUrl={previewPdf.url}
+          title={previewPdf.title}
+          isOpen={true}
+          onClose={() => setPreviewPdf(null)}
+        />
+      )}
     </div>
   );
 };
