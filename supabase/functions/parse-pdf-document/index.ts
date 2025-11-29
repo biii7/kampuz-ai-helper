@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { getDocument } from 'https://esm.sh/pdfjs-serverless@0.3.2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,17 +31,27 @@ serve(async (req) => {
     const pdfBuffer = await fileResponse.arrayBuffer();
     console.log('PDF downloaded, size:', pdfBuffer.byteLength, 'bytes');
 
-    // Use pdf-parse library to extract text
-    const pdfParse = (await import('https://esm.sh/pdf-parse@1.1.1')).default;
-    
-    // Convert ArrayBuffer to Uint8Array for pdf-parse
+    // Parse PDF using pdfjs-serverless
     const uint8Array = new Uint8Array(pdfBuffer);
-    const pdfData = await pdfParse(uint8Array);
-    const extractedText = pdfData.text;
+    const doc = await getDocument(uint8Array).promise;
+    const numPages = doc.numPages;
+    
+    console.log('PDF loaded, number of pages:', numPages);
 
-    console.log('Successfully extracted text from PDF');
-    console.log('Number of pages:', pdfData.numpages);
-    console.log('Text length:', extractedText.length, 'characters');
+    // Extract text from all pages
+    const textPages: string[] = [];
+    for (let i = 1; i <= numPages; i++) {
+      console.log(`Processing page ${i}/${numPages}`);
+      const page = await doc.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ');
+      textPages.push(pageText);
+    }
+
+    const extractedText = textPages.join('\n\n');
+    console.log('Successfully extracted text, length:', extractedText.length, 'characters');
 
     if (!extractedText || extractedText.trim().length === 0) {
       throw new Error('No text could be extracted from PDF. The PDF might be image-based or corrupted.');
@@ -57,7 +68,7 @@ serve(async (req) => {
           category,
           source,
           file_type: 'pdf',
-          pages: pdfData.numpages,
+          pages: numPages,
           extracted_at: new Date().toISOString()
         }
       })
@@ -76,7 +87,7 @@ serve(async (req) => {
         success: true, 
         document: data,
         extractedLength: extractedText.length,
-        pages: pdfData.numpages
+        pages: numPages
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
