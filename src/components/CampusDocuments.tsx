@@ -14,6 +14,10 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { PdfViewer } from "./PdfViewer";
 import { Progress } from "@/components/ui/progress";
+import { GlobalWorkerOptions, getDocument } from "pdfjs-dist";
+import pdfWorkerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+
+GlobalWorkerOptions.workerSrc = pdfWorkerSrc as any;
 
 interface CampusDocument {
   id: string;
@@ -156,6 +160,34 @@ export const CampusDocuments = () => {
     setEditingDoc(null);
   };
 
+  const extractTextFromPdf = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const typedArray = new Uint8Array(reader.result as ArrayBuffer);
+          const pdf = await getDocument({ data: typedArray }).promise;
+          let fullText = "";
+
+          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const textContent = await page.getTextContent();
+            const pageText = (textContent.items as any[])
+              .map((item) => (item as any).str)
+              .join(" ");
+            fullText += pageText + "\n\n";
+          }
+
+          resolve(fullText.trim());
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = () => reject(reader.error);
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
   const handleBulkUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -181,6 +213,9 @@ export const CampusDocuments = () => {
     setUploadProgress(progressList);
 
     // Process files one by one
+    let successCount = 0;
+    let errorCount = 0;
+
     for (let i = 0; i < uploadFiles.length; i++) {
       const file = uploadFiles[i];
       
@@ -190,8 +225,8 @@ export const CampusDocuments = () => {
           idx === i ? { ...p, status: 'uploading', progress: 25 } : p
         ));
 
-        // Generate title from filename if not provided
-        const title = file.name.replace('.pdf', '').replace(/[-_]/g, ' ');
+        // Generate title from filename
+        const title = file.name.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ');
         
         // Upload file to Supabase Storage
         const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
@@ -203,11 +238,6 @@ export const CampusDocuments = () => {
           throw new Error('Gagal mengupload file');
         }
 
-        // Update progress
-        setUploadProgress(prev => prev.map((p, idx) => 
-          idx === i ? { ...p, progress: 50 } : p
-        ));
-
         // Get public URL
         const { data: { publicUrl } } = supabase.storage
           .from('campus-documents')
@@ -215,30 +245,41 @@ export const CampusDocuments = () => {
 
         // Update status to processing
         setUploadProgress(prev => prev.map((p, idx) => 
-          idx === i ? { ...p, status: 'processing', progress: 75 } : p
+          idx === i ? { ...p, status: 'processing', progress: 60 } : p
         ));
 
-        // Call edge function to parse PDF
-        const { data: parseData, error: parseError } = await supabase.functions.invoke('parse-pdf-document', {
-          body: {
-            fileUrl: publicUrl,
-            title,
-            category: bulkUploadFormData.category || "Umum",
-            source: bulkUploadFormData.source || "Upload PDF"
-          }
-        });
+        // Extract text on client using pdfjs
+        const extractedText = await extractTextFromPdf(file);
 
-        if (parseError || !parseData.success) {
-          throw new Error(parseData?.error || 'Gagal memproses PDF');
+        // Save to database
+        const { error: insertError } = await supabase
+          .from('campus_documents')
+          .insert({
+            title,
+            content: extractedText,
+            file_url: publicUrl,
+            metadata: {
+              category: bulkUploadFormData.category || "Umum",
+              source: bulkUploadFormData.source || "Upload PDF",
+              file_type: 'pdf',
+              extracted_at: new Date().toISOString(),
+            }
+          });
+
+        if (insertError) {
+          console.error('Insert error:', insertError);
+          throw new Error('Gagal menyimpan dokumen ke database');
         }
 
         // Success
+        successCount++;
         setUploadProgress(prev => prev.map((p, idx) => 
           idx === i ? { ...p, status: 'success', progress: 100 } : p
         ));
 
       } catch (error) {
         console.error(`Error uploading ${file.name}:`, error);
+        errorCount++;
         setUploadProgress(prev => prev.map((p, idx) => 
           idx === i ? { 
             ...p, 
@@ -251,9 +292,6 @@ export const CampusDocuments = () => {
     }
 
     // Show final results
-    const successCount = uploadProgress.filter(p => p.status === 'success').length;
-    const errorCount = uploadProgress.filter(p => p.status === 'error').length;
-    
     if (successCount > 0) {
       toast.success(`${successCount} dokumen berhasil diupload!`);
     }
