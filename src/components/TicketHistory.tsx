@@ -36,10 +36,34 @@ export const TicketHistory = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     loadTickets();
+    checkAdminRole();
   }, []);
+
+  const checkAdminRole = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setIsAdmin(false);
+        return;
+      }
+
+      const { data: roleData, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .single();
+
+      setIsAdmin(!!roleData && !error);
+    } catch (error) {
+      console.error("Error checking admin role:", error);
+      setIsAdmin(false);
+    }
+  };
 
   const loadTickets = async () => {
     try {
@@ -158,16 +182,18 @@ export const TicketHistory = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Button
-              onClick={exportToCSV}
-              variant="secondary"
-              size="sm"
-              className="gap-2 bg-white/20 hover:bg-white/30 text-white border-white/30"
-              disabled={filteredTickets.length === 0}
-            >
-              <Download className="h-4 w-4" />
-              <span className="hidden md:inline">Export CSV</span>
-            </Button>
+            {isAdmin && (
+              <Button
+                onClick={exportToCSV}
+                variant="secondary"
+                size="sm"
+                className="gap-2 bg-white/20 hover:bg-white/30 text-white border-white/30"
+                disabled={filteredTickets.length === 0}
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden md:inline">Export CSV</span>
+              </Button>
+            )}
             <div className="glass-card px-4 py-2 rounded-full">
               <FileText className="h-6 w-6 text-white" />
             </div>
