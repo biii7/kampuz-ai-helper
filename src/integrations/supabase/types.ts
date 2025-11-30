@@ -288,11 +288,15 @@ export type Database = {
           created_at: string
           deskripsi: string
           id: string
+          is_anonymous: boolean | null
           kategori: string
           lokasi: string
           nim: string
           notes: string | null
+          reporter_email: string | null
+          reporter_name: string | null
           status: string
+          status_history: Json | null
           subjek: string
           waktu: string
         }
@@ -303,11 +307,15 @@ export type Database = {
           created_at?: string
           deskripsi: string
           id?: string
+          is_anonymous?: boolean | null
           kategori: string
           lokasi: string
           nim: string
           notes?: string | null
+          reporter_email?: string | null
+          reporter_name?: string | null
           status?: string
+          status_history?: Json | null
           subjek: string
           waktu?: string
         }
@@ -318,11 +326,15 @@ export type Database = {
           created_at?: string
           deskripsi?: string
           id?: string
+          is_anonymous?: boolean | null
           kategori?: string
           lokasi?: string
           nim?: string
           notes?: string | null
+          reporter_email?: string | null
+          reporter_name?: string | null
           status?: string
+          status_history?: Json | null
           subjek?: string
           waktu?: string
         }
