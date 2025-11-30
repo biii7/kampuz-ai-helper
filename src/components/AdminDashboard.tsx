@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { Shield, Send, User, MapPin, Calendar, AlertCircle, Search } from "lucide-react";
+import { Shield, Send, User, MapPin, Calendar, AlertCircle, Search, Trash2, XCircle, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { AdminAnalytics } from "./AdminAnalytics";
 import { SubAdminManagement } from "./SubAdminManagement";
@@ -329,6 +329,44 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
     }
   };
 
+  const handleStatusChange = async (ticketId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from("tickets")
+        .update({ status: newStatus })
+        .eq("id", ticketId);
+
+      if (error) throw error;
+
+      toast.success("Status tiket berhasil diubah");
+      loadTickets();
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast.error("Gagal mengubah status tiket");
+    }
+  };
+
+  const handleDeleteTicket = async (ticketId: string) => {
+    if (!confirm("Apakah Anda yakin ingin menghapus tiket ini? Tindakan ini tidak dapat dibatalkan.")) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("tickets")
+        .delete()
+        .eq("id", ticketId);
+
+      if (error) throw error;
+
+      toast.success("Tiket berhasil dihapus");
+      loadTickets();
+    } catch (error) {
+      console.error("Error deleting ticket:", error);
+      toast.error("Gagal menghapus tiket");
+    }
+  };
+
   const handleContactSelection = (ticketId: string, contactId: string) => {
     setSelectedContacts(prev => ({
       ...prev,
@@ -430,6 +468,7 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="diproses">Diproses</SelectItem>
                       <SelectItem value="selesai">Selesai</SelectItem>
+                      <SelectItem value="tidak_ditindaklanjuti">Tidak Ditindaklanjuti</SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -480,6 +519,9 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
                               )}
                               {ticket.status === "selesai" && (
                                 <Badge className="status-completed status-badge">✓ SELESAI</Badge>
+                              )}
+                              {ticket.status === "tidak_ditindaklanjuti" && (
+                                <Badge className="bg-gray-500/20 text-gray-300 border-gray-500/30 status-badge">✕ TIDAK DITINDAKLANJUTI</Badge>
                               )}
                             </div>
                             <h3 className="text-xl font-semibold text-foreground mb-2">{ticket.subjek}</h3>
@@ -622,6 +664,53 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
                               )}
                             </div>
                           </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex flex-col gap-2 shrink-0">
+                          <Select
+                            value={ticket.status}
+                            onValueChange={(newStatus) => handleStatusChange(ticket.id, newStatus)}
+                          >
+                            <SelectTrigger className="w-[180px] glass border-border/50">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">
+                                <div className="flex items-center gap-2">
+                                  <AlertCircle className="h-4 w-4" />
+                                  Pending
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="diproses">
+                                <div className="flex items-center gap-2">
+                                  <Shield className="h-4 w-4" />
+                                  Diproses
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="selesai">
+                                <div className="flex items-center gap-2">
+                                  <CheckCircle className="h-4 w-4" />
+                                  Selesai
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="tidak_ditindaklanjuti">
+                                <div className="flex items-center gap-2">
+                                  <XCircle className="h-4 w-4" />
+                                  Tidak Ditindaklanjuti
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteTicket(ticket.id)}
+                            className="w-[180px]"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Hapus Tiket
+                          </Button>
                         </div>
                       </div>
                     </div>
