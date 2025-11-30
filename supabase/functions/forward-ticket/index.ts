@@ -78,6 +78,7 @@ serve(async (req) => {
     }
 
     const results = [];
+    const logEntries = [];
 
     // Forward to each contact
     for (const contact of contacts) {
@@ -118,10 +119,28 @@ serve(async (req) => {
 
           if (emailResponse.ok) {
             results.push({ contact: contact.name, type: 'email', status: 'success' });
+            logEntries.push({
+              ticket_id: ticketId,
+              contact_id: contact.id,
+              contact_name: contact.name,
+              contact_type: 'email',
+              contact_value: contact.contact_value,
+              status: 'success',
+              error_details: null,
+            });
           } else {
             const errorData = await emailResponse.text();
             console.error('Email sending failed:', errorData);
             results.push({ contact: contact.name, type: 'email', status: 'failed', reason: errorData });
+            logEntries.push({
+              ticket_id: ticketId,
+              contact_id: contact.id,
+              contact_name: contact.name,
+              contact_type: 'email',
+              contact_value: contact.contact_value,
+              status: 'failed',
+              error_details: errorData,
+            });
           }
         } else if (contact.contact_type === 'whatsapp') {
           // Send WhatsApp message - read from system_settings table
@@ -172,16 +191,55 @@ serve(async (req) => {
             const responseData = await whatsappResponse.text();
             console.log('WhatsApp sent successfully:', responseData);
             results.push({ contact: contact.name, type: 'whatsapp', status: 'success' });
+            logEntries.push({
+              ticket_id: ticketId,
+              contact_id: contact.id,
+              contact_name: contact.name,
+              contact_type: 'whatsapp',
+              contact_value: contact.contact_value,
+              status: 'success',
+              error_details: null,
+            });
           } else {
             const errorData = await whatsappResponse.text();
             console.error('WhatsApp sending failed. Status:', whatsappResponse.status, 'Error:', errorData);
-            results.push({ contact: contact.name, type: 'whatsapp', status: 'failed', reason: `HTTP ${whatsappResponse.status}: ${errorData}` });
+            const errorMsg = `HTTP ${whatsappResponse.status}: ${errorData}`;
+            results.push({ contact: contact.name, type: 'whatsapp', status: 'failed', reason: errorMsg });
+            logEntries.push({
+              ticket_id: ticketId,
+              contact_id: contact.id,
+              contact_name: contact.name,
+              contact_type: 'whatsapp',
+              contact_value: contact.contact_value,
+              status: 'failed',
+              error_details: errorMsg,
+            });
           }
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('Error forwarding to contact:', contact.name, error);
         results.push({ contact: contact.name, status: 'failed', reason: errorMessage });
+        logEntries.push({
+          ticket_id: ticketId,
+          contact_id: contact.id,
+          contact_name: contact.name,
+          contact_type: contact.contact_type,
+          contact_value: contact.contact_value,
+          status: 'failed',
+          error_details: errorMessage,
+        });
+      }
+    }
+
+    // Save logs to database
+    if (logEntries.length > 0) {
+      const { error: logError } = await supabaseClient
+        .from('forwarding_logs')
+        .insert(logEntries);
+      
+      if (logError) {
+        console.error('Error saving forwarding logs:', logError);
       }
     }
 

@@ -14,6 +14,8 @@ export const ApiSettings = () => {
   const [showResend, setShowResend] = useState(false);
   const [showWhatsapp, setShowWhatsapp] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [testPhone, setTestPhone] = useState("");
 
   useEffect(() => {
     loadSettings();
@@ -65,6 +67,50 @@ export const ApiSettings = () => {
       toast.error("Gagal menyimpan pengaturan API");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const testWhatsAppConnection = async () => {
+    if (!whatsappKey || !whatsappUrl) {
+      toast.error("Harap isi API Key dan URL WhatsApp terlebih dahulu");
+      return;
+    }
+
+    if (!testPhone) {
+      toast.error("Harap masukkan nomor telepon untuk test");
+      return;
+    }
+
+    setIsTesting(true);
+    try {
+      const testMessage = `*Test Koneksi WhatsApp API*\n\nPesan test dari Sistem Keluhan Kampus UIN Alauddin Makassar.\n\nJika Anda menerima pesan ini, maka konfigurasi WhatsApp API sudah benar! ✅\n\n_${new Date().toLocaleString('id-ID')}_`;
+
+      const response = await fetch(whatsappUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${whatsappKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: testPhone,
+          message: testMessage,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('WhatsApp test success:', result);
+        toast.success("✅ Test berhasil! Pesan WhatsApp terkirim ke " + testPhone);
+      } else {
+        const errorText = await response.text();
+        console.error('WhatsApp test failed:', errorText);
+        toast.error(`❌ Test gagal: ${response.status} - ${errorText}`);
+      }
+    } catch (error) {
+      console.error("Error testing WhatsApp:", error);
+      toast.error("❌ Gagal menghubungi API WhatsApp. Periksa URL dan koneksi internet Anda.");
+    } finally {
+      setIsTesting(false);
     }
   };
 
@@ -170,6 +216,35 @@ export const ApiSettings = () => {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Gunakan WhatsApp Business API atau layanan pihak ketiga seperti Twilio, MessageBird, dll.
+                </p>
+              </div>
+              
+              {/* Test WhatsApp Connection */}
+              <div className="space-y-2 p-4 glass-card rounded-lg border border-primary/20">
+                <Label htmlFor="test-phone" className="text-foreground font-semibold">Test Koneksi WhatsApp</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Kirim pesan test untuk memastikan konfigurasi WhatsApp sudah benar
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    id="test-phone"
+                    type="text"
+                    value={testPhone}
+                    onChange={(e) => setTestPhone(e.target.value)}
+                    placeholder="628123456789"
+                    className="glass border-border/50"
+                  />
+                  <Button
+                    onClick={testWhatsAppConnection}
+                    disabled={isTesting || !whatsappKey || !whatsappUrl}
+                    variant="outline"
+                    className="shrink-0 border-primary/30 hover:bg-primary/10"
+                  >
+                    {isTesting ? "Mengirim..." : "Test Kirim"}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Format: 628xxx (kode negara + nomor tanpa 0 di depan)
                 </p>
               </div>
             </div>

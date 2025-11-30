@@ -95,9 +95,64 @@ export type Database = {
         }
         Relationships: []
       }
+      forwarding_logs: {
+        Row: {
+          contact_id: string | null
+          contact_name: string
+          contact_type: string
+          contact_value: string
+          created_at: string
+          error_details: string | null
+          id: string
+          sent_at: string
+          status: string
+          ticket_id: string | null
+        }
+        Insert: {
+          contact_id?: string | null
+          contact_name: string
+          contact_type: string
+          contact_value: string
+          created_at?: string
+          error_details?: string | null
+          id?: string
+          sent_at?: string
+          status: string
+          ticket_id?: string | null
+        }
+        Update: {
+          contact_id?: string | null
+          contact_name?: string
+          contact_type?: string
+          contact_value?: string
+          created_at?: string
+          error_details?: string | null
+          id?: string
+          sent_at?: string
+          status?: string
+          ticket_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forwarding_logs_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "forwarding_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forwarding_logs_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_templates: {
         Row: {
           body: string
+          category: string | null
           created_at: string
           id: string
           is_active: boolean
@@ -109,6 +164,7 @@ export type Database = {
         }
         Insert: {
           body: string
+          category?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -120,6 +176,7 @@ export type Database = {
         }
         Update: {
           body?: string
+          category?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
