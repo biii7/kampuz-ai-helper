@@ -124,15 +124,29 @@ serve(async (req) => {
             results.push({ contact: contact.name, type: 'email', status: 'failed', reason: errorData });
           }
         } else if (contact.contact_type === 'whatsapp') {
-          // Send WhatsApp message
-          const whatsappApiKey = Deno.env.get('WHATSAPP_API_KEY');
-          const whatsappApiUrl = Deno.env.get('WHATSAPP_API_URL');
+          // Send WhatsApp message - read from system_settings table
+          const { data: whatsappKeyData } = await supabaseClient
+            .from('system_settings')
+            .select('setting_value')
+            .eq('setting_key', 'whatsapp_api_key')
+            .single();
+
+          const { data: whatsappUrlData } = await supabaseClient
+            .from('system_settings')
+            .select('setting_value')
+            .eq('setting_key', 'whatsapp_api_url')
+            .single();
+          
+          const whatsappApiKey = whatsappKeyData?.setting_value;
+          const whatsappApiUrl = whatsappUrlData?.setting_value;
           
           if (!whatsappApiKey || !whatsappApiUrl) {
-            console.error('WhatsApp API not configured');
-            results.push({ contact: contact.name, status: 'failed', reason: 'WhatsApp API not configured' });
+            console.error('WhatsApp API not configured in system settings');
+            results.push({ contact: contact.name, type: 'whatsapp', status: 'failed', reason: 'WhatsApp API belum dikonfigurasi di pengaturan sistem' });
             continue;
           }
+
+          console.log('Sending WhatsApp to:', contact.contact_value, 'using URL:', whatsappApiUrl);
 
           const message = `*[${ticket.kategori.toUpperCase()}] Tiket Keluhan Baru*\n\n` +
             `*NIM:* ${ticket.nim}\n` +
@@ -155,11 +169,13 @@ serve(async (req) => {
           });
 
           if (whatsappResponse.ok) {
+            const responseData = await whatsappResponse.text();
+            console.log('WhatsApp sent successfully:', responseData);
             results.push({ contact: contact.name, type: 'whatsapp', status: 'success' });
           } else {
             const errorData = await whatsappResponse.text();
-            console.error('WhatsApp sending failed:', errorData);
-            results.push({ contact: contact.name, type: 'whatsapp', status: 'failed', reason: errorData });
+            console.error('WhatsApp sending failed. Status:', whatsappResponse.status, 'Error:', errorData);
+            results.push({ contact: contact.name, type: 'whatsapp', status: 'failed', reason: `HTTP ${whatsappResponse.status}: ${errorData}` });
           }
         }
       } catch (error) {
