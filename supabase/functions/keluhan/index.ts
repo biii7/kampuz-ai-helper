@@ -60,11 +60,11 @@ serve(async (req) => {
 
     console.log('Ticket created:', ticket.id);
 
-    // Get admin contact info from system_settings first, fallback to environment
+    // Get admin contact info and auto-forward setting from system_settings
     const { data: settingsData } = await supabaseClient
       .from('system_settings')
       .select('*')
-      .in('setting_key', ['fonnte_api_key', 'admin_wa', 'admin_email', 'resend_api_key']);
+      .in('setting_key', ['fonnte_api_key', 'admin_wa', 'admin_email', 'resend_api_key', 'auto_forward_enabled']);
     
     const settingsMap: Record<string, string> = {};
     settingsData?.forEach(setting => {
@@ -75,6 +75,28 @@ serve(async (req) => {
     const adminWa = settingsMap['admin_wa'] || Deno.env.get('ADMIN_WA');
     const adminEmail = settingsMap['admin_email'] || Deno.env.get('ADMIN_EMAIL');
     const resendApiKey = settingsMap['resend_api_key'] || Deno.env.get('RESEND_API_KEY');
+    const autoForwardEnabled = settingsMap['auto_forward_enabled'] === 'true';
+
+    // Check if auto-forward is enabled and forward ticket immediately
+    if (autoForwardEnabled) {
+      try {
+        console.log('Auto-forward enabled, forwarding ticket to contacts:', ticket.id);
+        const forwardResult = await supabaseClient.functions.invoke('forward-ticket', {
+          body: { ticketId: ticket.id }
+        });
+        
+        if (forwardResult.error) {
+          console.error('Auto-forward failed:', forwardResult.error);
+        } else {
+          console.log('Ticket auto-forwarded successfully to contacts');
+        }
+      } catch (forwardError) {
+        console.error('Error during auto-forward:', forwardError);
+        // Continue even if forwarding fails
+      }
+    } else {
+      console.log('Auto-forward disabled, ticket created without forwarding to contacts');
+    }
 
     const results = [];
     const errors = [];
