@@ -4,11 +4,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, FileText, MapPin, User, Calendar, Tag, AlertCircle, Search, Filter, Download } from "lucide-react";
+import { Loader2, FileText, MapPin, User, Calendar, Tag, AlertCircle, Search, Filter, Download, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TicketDetailDialog } from "./TicketDetailDialog";
 
 interface Ticket {
   id: string;
@@ -19,6 +20,10 @@ interface Ticket {
   deskripsi: string;
   status: string;
   waktu: string;
+  reporter_name?: string;
+  reporter_email?: string;
+  is_anonymous?: boolean;
+  status_history?: any; // Json type from Supabase
 }
 
 const categoryConfig: Record<string, { color: string; label: string }> = {
@@ -37,11 +42,24 @@ export const TicketHistory = () => {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     loadTickets();
     checkAdminRole();
+    getCurrentUserId();
   }, []);
+
+  const getCurrentUserId = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    } catch (error) {
+      console.error("Error getting user ID:", error);
+    }
+  };
 
   const checkAdminRole = async () => {
     try {
@@ -220,12 +238,13 @@ export const TicketHistory = () => {
               <SelectTrigger className="glass border-border/50">
                 <SelectValue placeholder="Filter Status" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="diproses">Diproses</SelectItem>
-                <SelectItem value="selesai">Selesai</SelectItem>
-              </SelectContent>
+                <SelectContent>
+                  <SelectItem value="all">Semua Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="diproses">Diproses</SelectItem>
+                  <SelectItem value="selesai">Selesai</SelectItem>
+                  <SelectItem value="tidak_ditindaklanjuti">Tidak Ditindaklanjuti</SelectItem>
+                </SelectContent>
             </Select>
           </div>
 
@@ -298,15 +317,28 @@ export const TicketHistory = () => {
                   {ticket.status === "selesai" && (
                     <Badge className="status-completed status-badge">✓ SELESAI</Badge>
                   )}
+                  {ticket.status === "tidak_ditindaklanjuti" && (
+                    <Badge className="bg-gray-500/20 text-gray-300 border-gray-500/30 status-badge">✕ TIDAK DITINDAKLANJUTI</Badge>
+                  )}
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-border/30">
-                <div className="flex items-center gap-2 text-sm">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">NIM:</span>
-                  <span className="font-semibold text-foreground">{ticket.nim}</span>
-                </div>
+                {isAdmin && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">NIM:</span>
+                    <span className="font-semibold text-foreground">{ticket.nim}</span>
+                  </div>
+                )}
+                
+                {!isAdmin && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Pelapor:</span>
+                    <span className="font-semibold text-foreground">Anonim</span>
+                  </div>
+                )}
                 
                 <div className="flex items-center gap-2 text-sm">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -321,11 +353,32 @@ export const TicketHistory = () => {
                   </span>
                 </div>
               </div>
+
+              <div className="mt-4 pt-4 border-t border-border/30">
+                <Button
+                  onClick={() => {
+                    setSelectedTicket(ticket);
+                    setDialogOpen(true);
+                  }}
+                  size="sm"
+                  className="gradient-primary w-full md:w-auto"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Lihat Detail & Tracking
+                </Button>
+              </div>
             </div>
             ))}
           </div>
         )}
       </ScrollArea>
+
+      <TicketDetailDialog
+        ticket={selectedTicket}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        isOwnerOrAdmin={isAdmin}
+      />
     </div>
   );
 };
