@@ -19,7 +19,7 @@ import uinLogo from "@/assets/uin-logo.png";
 
 interface AdminSidebarProps {
   activeTab: string;
-  onTabChange: (tab: "tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins" | "documents") => void;
+  onTabChange: (tab: "tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins" | "documents" | "logs") => void;
   onNavigate?: (view: "chat" | "history") => void;
 }
 
@@ -35,6 +35,7 @@ const menuItems = [
   { id: "documents", label: "Dokumen Kampus", icon: BookOpen },
   { id: "templates", label: "Template Pesan", icon: Mail },
   { id: "contacts", label: "Kontak", icon: Send },
+  { id: "logs", label: "Log Pengiriman", icon: History },
   { id: "api", label: "API Settings", icon: Settings },
   { id: "admins", label: "Sub-Admin", icon: Users },
 ];

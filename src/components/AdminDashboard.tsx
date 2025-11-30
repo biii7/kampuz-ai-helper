@@ -18,6 +18,7 @@ import { ApiSettings } from "./ApiSettings";
 import { MessageTemplates } from "./MessageTemplates";
 import { ForwardingStats } from "./ForwardingStats";
 import { CampusDocuments } from "./CampusDocuments";
+import { ForwardingLogs } from "./ForwardingLogs";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { NotificationBell } from "./NotificationBell";
 
@@ -64,7 +65,7 @@ const authorityOptions = [
 ];
 
 interface AdminDashboardProps {
-  activeTab: "tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins" | "documents";
+  activeTab: "tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins" | "documents" | "logs";
   hideNotification?: boolean;
 }
 
@@ -706,6 +707,18 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
 
       {activeTab === "documents" && (
         <CampusDocuments />
+      )}
+
+      {activeTab === "logs" && (
+        <>
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/50 -mx-6 md:-mx-8 px-6 md:px-8 py-4 mb-6">
+            <h1 className="text-3xl font-bold text-foreground">Log Pengiriman</h1>
+            <p className="text-muted-foreground mt-1">
+              Riwayat pengiriman email & WhatsApp ke pihak berwenang
+            </p>
+          </div>
+          <ForwardingLogs />
+        </>
       )}
     </div>
   );

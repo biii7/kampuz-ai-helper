@@ -40,6 +40,7 @@ interface MessageTemplate {
   body: string;
   variables: string[];
   is_active: boolean;
+  category: string | null;
 }
 
 const templateDescriptions: Record<string, string> = {
@@ -69,6 +70,7 @@ export const MessageTemplates = () => {
     type: "email",
     subject: "",
     body: "",
+    category: "all",
   });
 
   useEffect(() => {
@@ -155,6 +157,7 @@ export const MessageTemplates = () => {
         subject: formData.type === "email" ? formData.subject : null,
         body: formData.body,
         variables: extractVariables(formData.body),
+        category: formData.category === "all" ? null : formData.category,
       };
 
       if (editingTemplate) {
@@ -208,7 +211,7 @@ export const MessageTemplates = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: "", type: "email", subject: "", body: "" });
+    setFormData({ name: "", type: "email", subject: "", body: "", category: "all" });
     setEditingTemplate(null);
   };
 
@@ -219,6 +222,7 @@ export const MessageTemplates = () => {
       type: template.type,
       subject: template.subject || "",
       body: template.body,
+      category: template.category || "all",
     });
     setIsDialogOpen(true);
   };
@@ -321,6 +325,30 @@ export const MessageTemplates = () => {
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">{templateDescriptions[formData.type]}</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold">Kategori Keluhan</Label>
+                    <Select
+                      value={formData.category}
+                      onValueChange={(value) => setFormData({ ...formData, category: value })}
+                    >
+                      <SelectTrigger className="glass border-border/50 bg-background/50">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border-border/50">
+                        <SelectItem value="all">Semua Kategori (Default)</SelectItem>
+                        <SelectItem value="fasilitas">Fasilitas</SelectItem>
+                        <SelectItem value="akademik">Akademik</SelectItem>
+                        <SelectItem value="administrasi">Administrasi</SelectItem>
+                        <SelectItem value="keuangan">Keuangan</SelectItem>
+                        <SelectItem value="pelanggaran">Pelanggaran (SPI/DUMAS)</SelectItem>
+                        <SelectItem value="ppid">PPID</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Template akan digunakan untuk kategori ini. Pilih "Semua Kategori" untuk template umum.
+                    </p>
                   </div>
 
                   {formData.type === "email" && (
