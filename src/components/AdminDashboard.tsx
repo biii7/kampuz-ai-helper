@@ -653,7 +653,16 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
               Dashboard analitik keluhan kampus
             </p>
           </div>
-          <AdminAnalytics />
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-xl font-semibold mb-4 text-foreground">Statistik Pengiriman</h2>
+              <ForwardingStats />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold mb-4 text-foreground">Analitik Keluhan</h2>
+              <AdminAnalytics />
+            </div>
+          </div>
         </>
       )}
       

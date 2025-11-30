@@ -60,11 +60,21 @@ serve(async (req) => {
 
     console.log('Ticket created:', ticket.id);
 
-    // Get admin contact info from environment
-    const adminWa = Deno.env.get('ADMIN_WA');
-    const adminEmail = Deno.env.get('ADMIN_EMAIL');
-    const fonnteApiKey = Deno.env.get('FONNTE_API_KEY');
-    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    // Get admin contact info from system_settings first, fallback to environment
+    const { data: settingsData } = await supabaseClient
+      .from('system_settings')
+      .select('*')
+      .in('setting_key', ['fonnte_api_key', 'admin_wa', 'admin_email', 'resend_api_key']);
+    
+    const settingsMap: Record<string, string> = {};
+    settingsData?.forEach(setting => {
+      settingsMap[setting.setting_key] = setting.setting_value;
+    });
+
+    const fonnteApiKey = settingsMap['fonnte_api_key'] || Deno.env.get('FONNTE_API_KEY');
+    const adminWa = settingsMap['admin_wa'] || Deno.env.get('ADMIN_WA');
+    const adminEmail = settingsMap['admin_email'] || Deno.env.get('ADMIN_EMAIL');
+    const resendApiKey = settingsMap['resend_api_key'] || Deno.env.get('RESEND_API_KEY');
 
     const results = [];
     const errors = [];
