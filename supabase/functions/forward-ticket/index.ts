@@ -143,29 +143,29 @@ serve(async (req) => {
             });
           }
         } else if (contact.contact_type === 'whatsapp') {
-          // Send WhatsApp message - read from system_settings table
-          const { data: whatsappKeyData } = await supabaseClient
-            .from('system_settings')
-            .select('setting_value')
-            .eq('setting_key', 'whatsapp_api_key')
-            .single();
-
-          const { data: whatsappUrlData } = await supabaseClient
-            .from('system_settings')
-            .select('setting_value')
-            .eq('setting_key', 'whatsapp_api_url')
-            .single();
+          // Send WhatsApp message via Fonnte API
+          const fonnteApiKey = Deno.env.get('FONNTE_API_KEY');
           
-          const whatsappApiKey = whatsappKeyData?.setting_value;
-          const whatsappApiUrl = whatsappUrlData?.setting_value;
-          
-          if (!whatsappApiKey || !whatsappApiUrl) {
-            console.error('WhatsApp API not configured in system settings');
-            results.push({ contact: contact.name, type: 'whatsapp', status: 'failed', reason: 'WhatsApp API belum dikonfigurasi di pengaturan sistem' });
+          if (!fonnteApiKey) {
+            console.error('FONNTE_API_KEY not configured');
+            const errorMsg = 'WhatsApp API (Fonnte) belum dikonfigurasi';
+            results.push({ contact: contact.name, type: 'whatsapp', status: 'failed', reason: errorMsg });
+            logEntries.push({
+              ticket_id: ticketId,
+              contact_id: contact.id,
+              contact_name: contact.name,
+              contact_type: 'whatsapp',
+              contact_value: contact.contact_value,
+              status: 'failed',
+              error_details: errorMsg,
+            });
+            
+            // Notify admins of failure
+            await notifyAdminsOfFailure(supabaseClient, ticketId, contact.name, 'WhatsApp (Fonnte)', errorMsg);
             continue;
           }
 
-          console.log('Sending WhatsApp to:', contact.contact_value, 'using URL:', whatsappApiUrl);
+          console.log('Sending WhatsApp via Fonnte to:', contact.contact_value);
 
           const message = `*[${ticket.kategori.toUpperCase()}] Tiket Keluhan Baru*\n\n` +
             `*NIM:* ${ticket.nim}\n` +
@@ -175,21 +175,23 @@ serve(async (req) => {
             `*Deskripsi:*\n${ticket.deskripsi}\n\n` +
             `_Waktu: ${new Date(ticket.waktu).toLocaleString('id-ID')}_`;
 
-          const whatsappResponse = await fetch(whatsappApiUrl, {
+          const whatsappResponse = await fetch('https://api.fonnte.com/send', {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${whatsappApiKey}`,
+              'Authorization': fonnteApiKey,
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              to: contact.contact_value,
+              target: contact.contact_value,
               message: message,
+              countryCode: '62',
             }),
           });
 
-          if (whatsappResponse.ok) {
-            const responseData = await whatsappResponse.text();
-            console.log('WhatsApp sent successfully:', responseData);
+          const whatsappData = await whatsappResponse.json();
+
+          if (whatsappResponse.ok && whatsappData.status) {
+            console.log('WhatsApp sent successfully via Fonnte:', whatsappData);
             results.push({ contact: contact.name, type: 'whatsapp', status: 'success' });
             logEntries.push({
               ticket_id: ticketId,
@@ -201,9 +203,8 @@ serve(async (req) => {
               error_details: null,
             });
           } else {
-            const errorData = await whatsappResponse.text();
-            console.error('WhatsApp sending failed. Status:', whatsappResponse.status, 'Error:', errorData);
-            const errorMsg = `HTTP ${whatsappResponse.status}: ${errorData}`;
+            const errorMsg = `Fonnte error: ${JSON.stringify(whatsappData)}`;
+            console.error('WhatsApp sending failed via Fonnte:', errorMsg);
             results.push({ contact: contact.name, type: 'whatsapp', status: 'failed', reason: errorMsg });
             logEntries.push({
               ticket_id: ticketId,
@@ -214,6 +215,9 @@ serve(async (req) => {
               status: 'failed',
               error_details: errorMsg,
             });
+            
+            // Notify admins of failure
+            await notifyAdminsOfFailure(supabaseClient, ticketId, contact.name, 'WhatsApp (Fonnte)', errorMsg);
           }
         }
       } catch (error) {
@@ -229,6 +233,9 @@ serve(async (req) => {
           status: 'failed',
           error_details: errorMessage,
         });
+        
+        // Notify admins of failure
+        await notifyAdminsOfFailure(supabaseClient, ticketId, contact.name, contact.contact_type, errorMessage);
       }
     }
 
@@ -274,3 +281,38 @@ serve(async (req) => {
     );
   }
 });
+
+// Helper function to notify admins of delivery failures
+async function notifyAdminsOfFailure(
+  supabaseClient: any,
+  ticketId: string,
+  contactName: string,
+  channel: string,
+  errorDetails: string
+) {
+  try {
+    // Get all admin users
+    const { data: admins } = await supabaseClient
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'admin');
+
+    if (admins && admins.length > 0) {
+      const notifications = admins.map((admin: any) => ({
+        user_id: admin.user_id,
+        ticket_id: ticketId,
+        title: `Gagal Mengirim ke ${contactName}`,
+        message: `Pengiriman ${channel} ke ${contactName} untuk tiket #${ticketId.substring(0, 8)} gagal. Error: ${errorDetails}`,
+        type: 'delivery_failure',
+      }));
+
+      await supabaseClient
+        .from('notifications')
+        .insert(notifications);
+      
+      console.log(`Notified ${admins.length} admins of delivery failure to ${contactName}`);
+    }
+  } catch (error) {
+    console.error('Error notifying admins:', error);
+  }
+}
