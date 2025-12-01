@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { History, Mail, MessageSquare, CheckCircle2, XCircle, Search, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
 interface ForwardingLog {
   id: string;
@@ -36,6 +37,36 @@ export const ForwardingLogs = () => {
 
   useEffect(() => {
     loadLogs();
+
+    // Subscribe to forwarding logs for real-time updates
+    const forwardsChannel: RealtimeChannel = supabase
+      .channel('forwards-changes')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'forwarding_logs' },
+        (payload) => {
+          const newLog = payload.new as any;
+          
+          // Show toast notification
+          if (newLog.status === "success") {
+            toast.success(`✅ Tiket diteruskan ke ${newLog.contact_name}`, {
+              description: `Via ${newLog.contact_type === "email" ? "Email" : "WhatsApp"}`,
+            });
+          } else {
+            toast.error(`❌ Gagal mengirim ke ${newLog.contact_name}`, {
+              description: newLog.error_details || "Terjadi kesalahan",
+            });
+          }
+          
+          // Reload logs
+          loadLogs();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(forwardsChannel);
+    };
   }, []);
 
   const loadLogs = async () => {

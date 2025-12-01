@@ -79,19 +79,11 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
   const [isBulkForwarding, setIsBulkForwarding] = useState(false);
   const [autoForwardEnabled, setAutoForwardEnabled] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState<Record<string, string>>({});
-  const [recentForwards, setRecentForwards] = useState<Array<{
-    id: string;
-    contact_name: string;
-    kategori: string;
-    status: string;
-    sent_at: string;
-  }>>([]);
 
   useEffect(() => {
     loadTickets();
     loadForwardingContacts();
     loadAutoForwardSetting();
-    loadRecentForwards();
 
     // Set up realtime subscription for tickets
     const ticketsChannel: RealtimeChannel = supabase
@@ -163,37 +155,10 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
       )
       .subscribe();
 
-    // Subscribe to forwarding logs for real-time notifications
-    const forwardsChannel: RealtimeChannel = supabase
-      .channel('forwards-changes')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'forwarding_logs' },
-        (payload) => {
-          const newLog = payload.new as any;
-          
-          // Show toast notification
-          if (newLog.status === "success") {
-            toast.success(`✅ Tiket diteruskan ke ${newLog.contact_name}`, {
-              description: `Via ${newLog.contact_type === "email" ? "Email" : "WhatsApp"}`,
-            });
-          } else {
-            toast.error(`❌ Gagal mengirim ke ${newLog.contact_name}`, {
-              description: newLog.error_details || "Terjadi kesalahan",
-            });
-          }
-          
-          // Reload recent forwards
-          loadRecentForwards();
-        }
-      )
-      .subscribe();
-
     return () => {
       supabase.removeChannel(ticketsChannel);
       supabase.removeChannel(settingsChannel);
       supabase.removeChannel(contactsChannel);
-      supabase.removeChannel(forwardsChannel);
     };
   }, []);
 
@@ -228,35 +193,6 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
     }
   };
 
-  const loadRecentForwards = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("forwarding_logs")
-        .select(`
-          id,
-          contact_name,
-          status,
-          sent_at,
-          tickets(kategori)
-        `)
-        .order("sent_at", { ascending: false })
-        .limit(5);
-
-      if (error) throw error;
-      
-      const formatted = (data || []).map((log: any) => ({
-        id: log.id,
-        contact_name: log.contact_name,
-        kategori: log.tickets?.kategori || "unknown",
-        status: log.status,
-        sent_at: log.sent_at,
-      }));
-      
-      setRecentForwards(formatted);
-    } catch (error) {
-      console.error("Error loading recent forwards:", error);
-    }
-  };
 
   const loadAutoForwardSetting = async () => {
     try {
@@ -464,36 +400,6 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
               </div>
             </div>
 
-            {/* Real-time forwarding indicator */}
-            {recentForwards.length > 0 && (
-              <div className="mt-4 glass-card p-4 rounded-xl border border-primary/20">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
-                  <p className="text-xs font-semibold text-foreground">Penerusan Terbaru (Real-time)</p>
-                </div>
-                <div className="space-y-2">
-                  {recentForwards.map((forward) => (
-                    <div key={forward.id} className="flex items-center gap-2 text-xs p-2 glass rounded-lg">
-                      {forward.status === "success" ? (
-                        <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
-                      ) : (
-                        <XCircle className="h-3 w-3 text-red-500 flex-shrink-0" />
-                      )}
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                        {forward.kategori.toUpperCase()}
-                      </Badge>
-                      <span className="text-muted-foreground">→</span>
-                      <span className="font-semibold text-foreground truncate flex-1">
-                        {forward.contact_name}
-                      </span>
-                      <span className="text-muted-foreground text-[10px]">
-                        {format(new Date(forward.sent_at), "HH:mm", { locale: id })}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
           
           {isLoading ? (
