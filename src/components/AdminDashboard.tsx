@@ -79,11 +79,19 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
   const [isBulkForwarding, setIsBulkForwarding] = useState(false);
   const [autoForwardEnabled, setAutoForwardEnabled] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState<Record<string, string>>({});
+  const [recentForwards, setRecentForwards] = useState<Array<{
+    id: string;
+    contact_name: string;
+    kategori: string;
+    status: string;
+    sent_at: string;
+  }>>([]);
 
   useEffect(() => {
     loadTickets();
     loadForwardingContacts();
     loadAutoForwardSetting();
+    loadRecentForwards();
 
     // Set up realtime subscription for tickets
     const ticketsChannel: RealtimeChannel = supabase
@@ -155,10 +163,37 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
       )
       .subscribe();
 
+    // Subscribe to forwarding logs for real-time notifications
+    const forwardsChannel: RealtimeChannel = supabase
+      .channel('forwards-changes')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'forwarding_logs' },
+        (payload) => {
+          const newLog = payload.new as any;
+          
+          // Show toast notification
+          if (newLog.status === "success") {
+            toast.success(`✅ Tiket diteruskan ke ${newLog.contact_name}`, {
+              description: `Via ${newLog.contact_type === "email" ? "Email" : "WhatsApp"}`,
+            });
+          } else {
+            toast.error(`❌ Gagal mengirim ke ${newLog.contact_name}`, {
+              description: newLog.error_details || "Terjadi kesalahan",
+            });
+          }
+          
+          // Reload recent forwards
+          loadRecentForwards();
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(ticketsChannel);
       supabase.removeChannel(settingsChannel);
       supabase.removeChannel(contactsChannel);
+      supabase.removeChannel(forwardsChannel);
     };
   }, []);
 
@@ -190,6 +225,36 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
       setForwardingContacts(data || []);
     } catch (error) {
       console.error("Error loading contacts:", error);
+    }
+  };
+
+  const loadRecentForwards = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("forwarding_logs")
+        .select(`
+          id,
+          contact_name,
+          status,
+          sent_at,
+          tickets(kategori)
+        `)
+        .order("sent_at", { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      
+      const formatted = (data || []).map((log: any) => ({
+        id: log.id,
+        contact_name: log.contact_name,
+        kategori: log.tickets?.kategori || "unknown",
+        status: log.status,
+        sent_at: log.sent_at,
+      }));
+      
+      setRecentForwards(formatted);
+    } catch (error) {
+      console.error("Error loading recent forwards:", error);
     }
   };
 
@@ -230,23 +295,6 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
     } catch (error) {
       console.error("Error updating auto-forward setting:", error);
       toast.error("Gagal mengubah pengaturan auto-forward");
-    }
-  };
-
-  const toggleAutoForward = async (ticketId: string, currentValue: boolean | null) => {
-    try {
-      const { error } = await supabase
-        .from("tickets")
-        .update({ auto_forwarded: !currentValue })
-        .eq("id", ticketId);
-
-      if (error) throw error;
-
-      toast.success(!currentValue ? "Auto-forward diaktifkan" : "Auto-forward dinonaktifkan");
-      loadTickets();
-    } catch (error) {
-      console.error("Error toggling auto-forward:", error);
-      toast.error("Gagal mengubah status auto-forward");
     }
   };
 
@@ -402,7 +450,7 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
                   Kelola dan teruskan tiket keluhan ke pihak berwenang
                 </p>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 flex-wrap">
                 <div className="flex items-center gap-3 glass-card px-4 py-2 rounded-full">
                   <Send className="h-4 w-4 text-primary" />
                   <div>
@@ -415,6 +463,37 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
                 {!hideNotification && <NotificationBell />}
               </div>
             </div>
+
+            {/* Real-time forwarding indicator */}
+            {recentForwards.length > 0 && (
+              <div className="mt-4 glass-card p-4 rounded-xl border border-primary/20">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+                  <p className="text-xs font-semibold text-foreground">Penerusan Terbaru (Real-time)</p>
+                </div>
+                <div className="space-y-2">
+                  {recentForwards.map((forward) => (
+                    <div key={forward.id} className="flex items-center gap-2 text-xs p-2 glass rounded-lg">
+                      {forward.status === "success" ? (
+                        <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
+                      ) : (
+                        <XCircle className="h-3 w-3 text-red-500 flex-shrink-0" />
+                      )}
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                        {forward.kategori.toUpperCase()}
+                      </Badge>
+                      <span className="text-muted-foreground">→</span>
+                      <span className="font-semibold text-foreground truncate flex-1">
+                        {forward.contact_name}
+                      </span>
+                      <span className="text-muted-foreground text-[10px]">
+                        {format(new Date(forward.sent_at), "HH:mm", { locale: id })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           
           {isLoading ? (
@@ -541,27 +620,6 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
 
                             {/* Auto-forward / Manual forwarding */}
                             <div className="mt-4">
-                              {/* Auto mode: show toggle only jika setting global AKTIF & ada kontak aktif untuk kategori ini */}
-                              {autoForwardEnabled && getSuggestedContacts(ticket.kategori).length > 0 && (
-                                <div className="flex items-center justify-between p-4 glass-card rounded-xl">
-                                  <div className="flex items-center gap-3">
-                                    <Send className="h-5 w-5 text-primary" />
-                                    <div>
-                                      <p className="text-sm font-semibold text-foreground">
-                                        Auto-Forward
-                                      </p>
-                                      <p className="text-xs text-muted-foreground">
-                                        {ticket.auto_forwarded ? "Aktif - Akan diteruskan otomatis" : "Nonaktif"}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <Switch
-                                    checked={ticket.auto_forwarded || false}
-                                    onCheckedChange={() => toggleAutoForward(ticket.id, ticket.auto_forwarded)}
-                                  />
-                                </div>
-                              )}
-
                               {/* Manual mode: jika setting global NON AKTIF DAN status PENDING */}
                               {!autoForwardEnabled && ticket.status === 'pending' && (
                                 <div className="mt-3 p-4 glass-card rounded-xl space-y-3">
@@ -639,10 +697,10 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
                               )}
 
                               {/* Info kontak yang akan menerima saat auto-forward aktif */}
-                              {autoForwardEnabled && ticket.auto_forwarded && getSuggestedContacts(ticket.kategori).length > 0 && (
+                              {autoForwardEnabled && getSuggestedContacts(ticket.kategori).length > 0 && (
                                 <div className="mt-3 p-3 glass-card rounded-xl">
                                   <p className="text-xs text-muted-foreground mb-2">
-                                    💡 Akan diteruskan ke:
+                                    💡 Diteruskan otomatis ke:
                                   </p>
                                   <div className="space-y-1">
                                     {getSuggestedContacts(ticket.kategori).map((contact) => (
