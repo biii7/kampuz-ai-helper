@@ -37,14 +37,23 @@ serve(async (req) => {
       throw new Error('Ticket not found');
     }
 
-    // Check if auto-forward is enabled
-    const { data: setting } = await supabaseClient
+    // Get all system settings including API keys and auto-forward status
+    const { data: settingsData } = await supabaseClient
       .from('system_settings')
-      .select('setting_value')
-      .eq('setting_key', 'auto_forward_enabled')
-      .single();
+      .select('*')
+      .in('setting_key', ['fonnte_api_key', 'resend_api_key', 'auto_forward_enabled']);
+    
+    const settingsMap: Record<string, string> = {};
+    settingsData?.forEach((setting: any) => {
+      settingsMap[setting.setting_key] = setting.setting_value;
+    });
 
-    if (!setting || setting.setting_value !== 'true') {
+    // Get API keys from database or fallback to env
+    const fonnteApiKey = settingsMap['fonnte_api_key'] || Deno.env.get('FONNTE_API_KEY');
+    const resendApiKey = settingsMap['resend_api_key'] || Deno.env.get('RESEND_API_KEY');
+    const autoForwardEnabled = settingsMap['auto_forward_enabled'] === 'true';
+
+    if (!autoForwardEnabled) {
       return new Response(
         JSON.stringify({ message: 'Auto-forward is disabled' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -84,8 +93,7 @@ serve(async (req) => {
     for (const contact of contacts) {
       try {
         if (contact.contact_type === 'email') {
-          // Send email using Resend
-          const resendApiKey = Deno.env.get('RESEND_API_KEY');
+          // Send email using Resend - use API key from database or env
           if (!resendApiKey) {
             console.error('RESEND_API_KEY not configured');
             results.push({ contact: contact.name, status: 'failed', reason: 'Email API not configured' });
@@ -143,9 +151,7 @@ serve(async (req) => {
             });
           }
         } else if (contact.contact_type === 'whatsapp') {
-          // Send WhatsApp message via Fonnte API
-          const fonnteApiKey = Deno.env.get('FONNTE_API_KEY');
-          
+          // Send WhatsApp message via Fonnte API - use API key from database or env
           if (!fonnteApiKey) {
             console.error('FONNTE_API_KEY not configured');
             const errorMsg = 'WhatsApp API (Fonnte) belum dikonfigurasi';
