@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Loader2, Moon, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +33,8 @@ export const ChatInterface = () => {
   const [showConfetti, setShowConfetti] = useState(false);
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -41,14 +42,31 @@ export const ChatInterface = () => {
     }
   }, [messages]);
 
+  // Handle mobile keyboard: scroll input into view
+  useEffect(() => {
+    const handleResize = () => {
+      // When virtual keyboard opens, scroll the input into view
+      if (document.activeElement === inputRef.current) {
+        setTimeout(() => {
+          inputRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+        }, 300);
+      }
+    };
+
+    const visualViewport = window.visualViewport;
+    if (visualViewport) {
+      visualViewport.addEventListener("resize", handleResize);
+      return () => visualViewport.removeEventListener("resize", handleResize);
+    }
+  }, []);
+
   // Smooth typing effect
   const typeMessage = (content: string) => {
     return new Promise<void>((resolve) => {
       let currentText = "";
-      const typingSpeed = 20; // ms per character
+      const typingSpeed = 20;
       const chars = content.split("");
       
-      // Add empty message first
       setMessages(prev => [...prev, { role: "assistant", content: "", isTyping: true }]);
       
       let index = 0;
@@ -86,13 +104,15 @@ export const ChatInterface = () => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
+    // Blur input on mobile to close keyboard after sending
+    inputRef.current?.blur();
+
     const userMessage = input.trim();
     setInput("");
     setMessages(prev => [...prev, { role: "user", content: userMessage }]);
     setIsLoading(true);
 
     try {
-      // Deteksi intent
       const intentRes = await supabase.functions.invoke("process-complaint", {
         body: { message: userMessage, type: "intent" }
       });
@@ -102,7 +122,6 @@ export const ChatInterface = () => {
       const intent = intentRes.data?.intent;
 
       if (intent === "informasi") {
-        // RAG untuk pertanyaan informasi
         const ragRes = await supabase.functions.invoke("process-complaint", {
           body: { message: userMessage, type: "rag" }
         });
@@ -111,7 +130,6 @@ export const ChatInterface = () => {
 
         await typeMessage(ragRes.data.answer);
       } else {
-        // Proses keluhan
         const [classifyRes, nerRes, sentimentRes] = await Promise.all([
           supabase.functions.invoke("process-complaint", {
             body: { message: userMessage, type: "classify" }
@@ -140,7 +158,6 @@ export const ChatInterface = () => {
         };
         const sentiment = sentimentRes.data?.sentiment || "neutral";
 
-        // Play sound effect based on sentiment
         if (sentiment === "frustrated") {
           playFrustratedSound();
         } else if (sentiment === "sad") {
@@ -151,7 +168,6 @@ export const ChatInterface = () => {
           playNeutralSound();
         }
 
-        // Generate empathetic response based on sentiment
         const empatheticRes = await supabase.functions.invoke("process-complaint", {
           body: { 
             message: userMessage, 
@@ -164,10 +180,8 @@ export const ChatInterface = () => {
         const empatheticMessage = empatheticRes.data?.response || 
           "Terima kasih telah menyampaikan keluhan Anda. Kami akan segera menindaklanjuti.";
 
-        // Show empathetic response first
         await typeMessage(empatheticMessage);
 
-        // Simpan tiket
         const { data: ticket, error: ticketError } = await supabase
           .from("tickets")
           .insert({
@@ -198,17 +212,13 @@ export const ChatInterface = () => {
           console.error("Failed to auto-forward ticket:", forwardError);
         }
 
-        // Play success sound effect
         playSuccessSound();
 
-        // First show success message with typing effect
         await typeMessage("🎉 Tiket keluhan Anda berhasil dibuat!\n\nTiket Anda telah diterima dan akan segera diproses oleh tim terkait. Berikut detail tiket Anda:");
 
-        // Trigger confetti celebration
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 5000);
 
-        // Then show ticket display
         setMessages(prev => [...prev, {
           role: "assistant",
           content: "",
@@ -229,7 +239,6 @@ export const ChatInterface = () => {
     } catch (error: any) {
       console.error("Chat Error Details:", error);
       
-      // Check for specific error types
       let errorMessage = "❌ Maaf, terjadi kesalahan dalam memproses pesan Anda.";
       let toastDescription = "Gagal memproses pesan";
       
@@ -254,7 +263,6 @@ export const ChatInterface = () => {
         }
       }
       
-      // Log the full error for debugging
       if (error?.data) {
         console.error("Error Data:", error.data);
       }
@@ -275,7 +283,11 @@ export const ChatInterface = () => {
   };
 
   return (
-    <div className="glass-card max-w-5xl mx-auto overflow-hidden card-elevated relative">
+    <div 
+      ref={containerRef}
+      className="glass-card max-w-5xl mx-auto overflow-hidden card-elevated relative flex flex-col"
+      style={{ maxHeight: "calc(100dvh - 8rem)" }}
+    >
       {showConfetti && (
         <Confetti
           width={window.innerWidth}
@@ -286,21 +298,24 @@ export const ChatInterface = () => {
         />
       )}
       {/* Header */}
-      <div className="gradient-primary p-3 md:p-6">
+      <div className="gradient-primary p-3 md:p-5 flex-shrink-0">
         <div className="flex items-center gap-2 md:gap-3">
           <div className="glass-card p-1.5 md:p-2 rounded-xl animate-pulse">
-            <Moon className="h-5 w-5 md:h-8 md:w-8 text-white" />
+            <Moon className="h-5 w-5 md:h-7 md:w-7 text-white" />
           </div>
           <div>
-            <h2 className="text-base md:text-2xl font-bold text-white">Chatbot AI Kampus</h2>
+            <h2 className="text-base md:text-xl font-bold text-white">Chatbot AI Kampus</h2>
             <p className="text-white/80 text-[10px] md:text-sm">Powered by RAG & Intent Detection</p>
           </div>
         </div>
       </div>
 
-      {/* Chat Messages */}
-      <ScrollArea ref={scrollRef} className="h-[450px] md:h-[500px] p-3 md:p-6">
-        <div className="space-y-4">
+      {/* Chat Messages - flex-1 to fill available space */}
+      <div 
+        ref={scrollRef} 
+        className="flex-1 overflow-y-auto p-3 md:p-5 min-h-0"
+      >
+        <div className="space-y-3 md:space-y-4">
           {messages.map((message, index) => (
             <div
               key={index}
@@ -313,7 +328,7 @@ export const ChatInterface = () => {
               }}
             >
               {message.role === "assistant" && (
-                <div className="glass-card p-1 md:p-2 h-7 w-7 md:h-10 md:w-10 flex items-center justify-center flex-shrink-0 animate-scale-in">
+                <div className="glass-card p-1 md:p-2 h-7 w-7 md:h-9 md:w-9 flex items-center justify-center flex-shrink-0 animate-scale-in">
                   <Moon className="h-3.5 w-3.5 md:h-5 md:w-5 text-primary" />
                 </div>
               )}
@@ -338,7 +353,7 @@ export const ChatInterface = () => {
               )}
 
               {message.role === "user" && (
-                <div className="glass-card p-1 md:p-2 h-7 w-7 md:h-10 md:w-10 flex items-center justify-center flex-shrink-0 animate-scale-in">
+                <div className="glass-card p-1 md:p-2 h-7 w-7 md:h-9 md:w-9 flex items-center justify-center flex-shrink-0 animate-scale-in">
                   <User className="h-3.5 w-3.5 md:h-5 md:w-5 text-secondary" />
                 </div>
               )}
@@ -347,7 +362,7 @@ export const ChatInterface = () => {
           
           {isLoading && (
             <div className="flex gap-2 md:gap-3 animate-fade-in">
-              <div className="glass-card p-1 md:p-2 h-7 w-7 md:h-10 md:w-10 flex items-center justify-center">
+              <div className="glass-card p-1 md:p-2 h-7 w-7 md:h-9 md:w-9 flex items-center justify-center">
                 <Moon className="h-3.5 w-3.5 md:h-5 md:w-5 text-primary animate-pulse" />
               </div>
               <div className="glass-card border border-border/50 rounded-2xl p-2 md:p-4 flex items-center gap-2">
@@ -357,22 +372,26 @@ export const ChatInterface = () => {
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
 
-      {/* Input Box */}
-      <form onSubmit={handleSubmit} className="p-2.5 md:p-6 border-t border-border/50 bg-background/50 backdrop-blur">
+      {/* Input Box - sticky at bottom, safe from keyboard */}
+      <form 
+        onSubmit={handleSubmit} 
+        className="p-2.5 md:p-4 border-t border-border/50 bg-background/80 backdrop-blur flex-shrink-0"
+      >
         <div className="flex gap-2 md:gap-3">
           <Input
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ketik keluhan atau pertanyaan..."
             disabled={isLoading}
-            className="glass flex-1 rounded-full px-3 md:px-6 py-2.5 md:py-6 text-xs md:text-base border-border/50 focus:border-primary transition-all"
+            className="glass flex-1 rounded-full px-3 md:px-5 py-2.5 md:py-5 text-xs md:text-base border-border/50 focus:border-primary transition-all"
           />
           <Button
             type="submit"
             disabled={isLoading || !input.trim()}
-            className="gradient-primary rounded-full h-9 w-9 md:h-12 md:w-12 p-0 hover:scale-110 transition-transform shadow-lg flex-shrink-0"
+            className="gradient-primary rounded-full h-9 w-9 md:h-11 md:w-11 p-0 hover:scale-110 transition-transform shadow-lg flex-shrink-0"
           >
             <Send className="h-3.5 w-3.5 md:h-5 md:w-5" />
           </Button>

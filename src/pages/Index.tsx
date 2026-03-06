@@ -156,7 +156,7 @@ const Index = () => {
 
   if (view === "hero") {
     return (
-      <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-primary/5 via-accent/5 to-primary/10 flex flex-col">
+      <div className="min-h-dvh relative overflow-x-hidden bg-gradient-to-br from-primary/5 via-accent/5 to-primary/10 flex flex-col">
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute w-96 h-96 bg-primary/10 rounded-full blur-3xl -top-48 -left-48 animate-float" />
@@ -243,7 +243,7 @@ const Index = () => {
   if (view === "admin" && isAdmin) {
     return (
       <SidebarProvider defaultOpen={true}>
-        <div className="min-h-screen flex w-full bg-background">
+        <div className="min-h-dvh flex w-full bg-background">
           <AdminSidebar
             activeTab={adminTab}
             onTabChange={setAdminTab}
@@ -290,11 +290,11 @@ const Index = () => {
 
   // Chat / Tickets view with shared navbar
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-dvh flex flex-col bg-background">
       <Navbar />
 
-      <main className="flex-1 overflow-auto">
-        <div className="container mx-auto px-4 py-8">
+      <main className="flex-1 overflow-auto min-h-0">
+        <div className="container mx-auto px-3 md:px-4 py-4 md:py-8 pb-safe">
           <div className="animate-fade-in">
             {view === "chat" && <ChatInterface />}
             {view === "tickets" && <TicketHistory />}
