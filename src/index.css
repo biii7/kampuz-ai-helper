@@ -52,12 +52,21 @@
 
   html {
     scroll-behavior: smooth;
+    /* Support for mobile viewport with keyboard */
+    height: -webkit-fill-available;
   }
 
   body {
     @apply bg-background text-foreground;
     background: linear-gradient(135deg, hsl(210 100% 97%), hsl(200 100% 95%), hsl(190 90% 93%));
     background-attachment: fixed;
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+  }
+
+  /* Safe area for mobile notch/keyboard */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 
