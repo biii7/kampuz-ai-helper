@@ -17,25 +17,48 @@ const Index = () => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    checkAdminStatus();
-  }, []);
+    // Set up auth state listener FIRST (before getSession)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          // Use setTimeout to avoid Supabase auth deadlock
+          setTimeout(async () => {
+            const { data } = await supabase
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", session.user.id)
+              .eq("role", "admin")
+              .single();
+            setIsAdmin(!!data);
+            if (data && event === "SIGNED_IN") {
+              setView("admin");
+            }
+          }, 0);
+        } else {
+          setIsAdmin(false);
+        }
+      }
+    );
 
-  const checkAdminStatus = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
+    // Then check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        const { data } = await supabase
+        supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", session.user.id)
           .eq("role", "admin")
-          .single();
-        setIsAdmin(!!data);
+          .single()
+          .then(({ data }) => {
+            setIsAdmin(!!data);
+          });
       }
-    } catch (error) {
-      console.error("Error checking admin status:", error);
-    }
-  };
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // Shared Navbar component used in hero and non-admin views
   const Navbar = ({ transparent = false }: { transparent?: boolean }) => (
