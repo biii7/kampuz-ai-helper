@@ -183,31 +183,19 @@ export const ChatInterface = () => {
 
         if (ticketError) throw ticketError;
 
-        // Check auto-forward setting and forward immediately if enabled
-        const { data: autoForwardSetting } = await supabase
-          .from("system_settings")
-          .select("setting_value")
-          .eq("setting_key", "auto_forward_enabled")
-          .single();
-
-        const autoForwardEnabled = autoForwardSetting?.setting_value === "true";
-
-        if (autoForwardEnabled) {
-          // Forward ticket immediately
-          try {
-            const forwardResult = await supabase.functions.invoke("forward-ticket", {
-              body: { ticketId: ticket.id }
-            });
-            
-            if (forwardResult.error) {
-              console.error("Auto-forward error:", forwardResult.error);
-            } else {
-              console.log("Ticket auto-forwarded successfully:", forwardResult.data);
-            }
-          } catch (forwardError) {
-            console.error("Failed to auto-forward ticket:", forwardError);
-            // Don't fail the whole process if forwarding fails
+        // Trigger auto-forward via edge function (it checks the setting server-side)
+        try {
+          const forwardResult = await supabase.functions.invoke("forward-ticket", {
+            body: { ticketId: ticket.id }
+          });
+          
+          if (forwardResult.error) {
+            console.error("Auto-forward error:", forwardResult.error);
+          } else {
+            console.log("Auto-forward result:", forwardResult.data);
           }
+        } catch (forwardError) {
+          console.error("Failed to auto-forward ticket:", forwardError);
         }
 
         // Play success sound effect

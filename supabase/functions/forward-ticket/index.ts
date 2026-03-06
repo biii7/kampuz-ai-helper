@@ -14,12 +14,7 @@ serve(async (req) => {
   try {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     const { ticketId, specificContactId } = await req.json();
@@ -53,7 +48,8 @@ serve(async (req) => {
     const resendApiKey = settingsMap['resend_api_key'] || Deno.env.get('RESEND_API_KEY');
     const autoForwardEnabled = settingsMap['auto_forward_enabled'] === 'true';
 
-    if (!autoForwardEnabled) {
+    // Only block if auto-forward is disabled AND no specific contact (i.e., not a manual send)
+    if (!autoForwardEnabled && !specificContactId) {
       return new Response(
         JSON.stringify({ message: 'Auto-forward is disabled' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

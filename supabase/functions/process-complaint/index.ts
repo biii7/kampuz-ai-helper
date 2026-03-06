@@ -181,7 +181,7 @@ Balas HANYA dengan JSON tanpa penjelasan. Contoh:
       // Generate embedding for the question
       let queryEmbedding = null;
       try {
-        const embeddingResponse = await fetch("https://api.openai.com/v1/embeddings", {
+        const embeddingResponse = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${LOVABLE_API_KEY}`,
