@@ -21,26 +21,46 @@ export default function AdminAuth() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is already logged in
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      // Check if user is admin
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.user.id)
-        .eq("role", "admin")
-        .single();
-      
-      if (data) {
-        navigate("/", { replace: true });
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session && event === "SIGNED_IN") {
+          setTimeout(async () => {
+            const { data } = await supabase
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", session.user.id)
+              .eq("role", "admin")
+              .single();
+            if (data) {
+              navigate("/", { replace: true });
+            }
+          }, 0);
+        }
       }
-    }
-  };
+    );
+
+    // Check if already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .eq("role", "admin")
+          .single()
+          .then(({ data }) => {
+            if (data) {
+              navigate("/", { replace: true });
+            }
+          });
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
