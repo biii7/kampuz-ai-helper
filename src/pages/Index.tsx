@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ChatInterface } from "@/components/ChatInterface";
 import { TicketHistory } from "@/components/TicketHistory";
 import { AdminDashboard } from "@/components/AdminDashboard";
-import { GraduationCap, Moon, Ticket, Sparkles, Shield, Menu } from "lucide-react";
+import { MessageSquare, Ticket, Sparkles, Shield, Menu, Moon, LogOut, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
@@ -37,23 +37,120 @@ const Index = () => {
     }
   };
 
+  // Shared Navbar component used in hero and non-admin views
+  const Navbar = ({ transparent = false }: { transparent?: boolean }) => (
+    <header
+      className={`sticky top-0 z-50 h-16 flex-shrink-0 transition-colors ${
+        transparent
+          ? "bg-transparent"
+          : "glass border-b border-border/50 backdrop-blur-xl bg-background/95"
+      }`}
+    >
+      <div className="h-full px-4 md:px-6 max-w-7xl mx-auto">
+        <div className="flex items-center justify-between h-full gap-4">
+          {/* Logo */}
+          <button
+            onClick={() => setView("hero")}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity min-w-0"
+          >
+            <img
+              src={uinLogo}
+              alt="UIN Alauddin"
+              className="h-10 w-auto object-contain flex-shrink-0"
+            />
+            <div className="text-left min-w-0 hidden sm:block">
+              <h1 className="text-sm font-bold gradient-text truncate">
+                Sistem Keluhan Kampus
+              </h1>
+              <p className="text-xs text-muted-foreground truncate">
+                UIN Alauddin Makassar
+              </p>
+            </div>
+          </button>
+
+          {/* Navigation */}
+          <nav className="flex gap-1.5 items-center flex-shrink-0">
+            <Button
+              variant={view === "chat" ? "default" : "ghost"}
+              className={`${view === "chat" ? "gradient-primary text-white" : ""} h-9 text-sm`}
+              onClick={() => setView("chat")}
+              size="sm"
+            >
+              <MessageSquare className="h-4 w-4 mr-1.5" />
+              <span className="hidden md:inline">Chat</span>
+            </Button>
+            <Button
+              variant={view === "tickets" ? "default" : "ghost"}
+              className={`${view === "tickets" ? "gradient-primary text-white" : ""} h-9 text-sm`}
+              onClick={() => setView("tickets")}
+              size="sm"
+            >
+              <Ticket className="h-4 w-4 mr-1.5" />
+              <span className="hidden md:inline">Tiket</span>
+            </Button>
+
+            {isAdmin ? (
+              <>
+                <Button
+                  variant={view === "admin" ? "default" : "ghost"}
+                  className={`${view === "admin" ? "gradient-primary text-white" : ""} h-9 text-sm`}
+                  onClick={() => setView("admin")}
+                  size="sm"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden md:inline ml-1.5">Dashboard</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="h-9 text-sm text-destructive hover:text-destructive"
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    setIsAdmin(false);
+                    setView("hero");
+                  }}
+                  size="sm"
+                  title="Keluar"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="ghost"
+                className="h-9 w-9 p-0 text-muted-foreground/40 hover:text-muted-foreground/70"
+                onClick={() => (window.location.href = "/admin-auth")}
+                size="sm"
+                title="Admin Login"
+              >
+                <Shield className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </nav>
+        </div>
+      </div>
+    </header>
+  );
+
   if (view === "hero") {
     return (
-      <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-primary/5 via-accent/5 to-primary/10">
+      <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-primary/5 via-accent/5 to-primary/10 flex flex-col">
         {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute w-96 h-96 bg-primary/10 rounded-full blur-3xl -top-48 -left-48 animate-float" />
-          <div className="absolute w-96 h-96 bg-accent/10 rounded-full blur-3xl -bottom-48 -right-48 animate-float" style={{ animationDelay: '1s' }} />
+          <div className="absolute w-96 h-96 bg-accent/10 rounded-full blur-3xl -bottom-48 -right-48 animate-float" style={{ animationDelay: "1s" }} />
         </div>
 
-        <main className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-16">
+        {/* Navbar on hero — transparent style */}
+        <Navbar transparent />
+
+        <main className="relative z-10 flex flex-col items-center justify-center flex-1 px-4 py-12">
           <div className="text-center space-y-8 max-w-4xl animate-fade-in">
             {/* Logo */}
-            <div className="flex justify-center mb-8">
-              <img 
-                src={uinLogo} 
-                alt="UIN Alauddin Makassar" 
-                className="h-32 md:h-40 w-auto object-contain animate-float"
+            <div className="flex justify-center mb-4">
+              <img
+                src={uinLogo}
+                alt="UIN Alauddin Makassar"
+                className="h-28 md:h-36 w-auto object-contain animate-float"
               />
             </div>
 
@@ -65,16 +162,16 @@ const Index = () => {
             </h1>
 
             {/* Subtitle */}
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: "0.2s" }}>
               UIN Alauddin Makassar
             </p>
 
-            <p className="text-base md:text-lg text-muted-foreground/80 max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            <p className="text-base md:text-lg text-muted-foreground/80 max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: "0.3s" }}>
               <strong>Single Gateway & Sistem Triage Otomatis</strong> untuk mengelola keluhan mahasiswa dengan teknologi AI — memberikan Respons Instan (RAG) dan Penerusan Keluhan Otomatis
             </p>
 
             {/* Features */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 animate-fade-in" style={{ animationDelay: "0.4s" }}>
               <div className="glass-card p-6 hover:scale-105 transition-transform">
                 <Sparkles className="h-8 w-8 text-primary mx-auto mb-4" />
                 <h3 className="font-semibold text-lg mb-2">Respons Instan (RAG)</h3>
@@ -93,13 +190,13 @@ const Index = () => {
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-12 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-12 animate-fade-in" style={{ animationDelay: "0.5s" }}>
               <Button
                 size="lg"
                 className="gradient-primary text-lg px-8 py-6 rounded-full glow-hover shadow-2xl"
                 onClick={() => setView("chat")}
               >
-                <Moon className="mr-2 h-5 w-5" />
+                <MessageSquare className="mr-2 h-5 w-5" />
                 Mulai Chat
               </Button>
               <Button
@@ -119,106 +216,21 @@ const Index = () => {
     );
   }
 
-  return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="min-h-screen flex w-full bg-background">
-        {/* Sidebar - Only show in admin view */}
-        {view === "admin" && isAdmin && (
-          <AdminSidebar 
-            activeTab={adminTab} 
+  // Admin view with sidebar
+  if (view === "admin" && isAdmin) {
+    return (
+      <SidebarProvider defaultOpen={true}>
+        <div className="min-h-screen flex w-full bg-background">
+          <AdminSidebar
+            activeTab={adminTab}
             onTabChange={setAdminTab}
             onNavigate={(newView) => {
               setView(newView === "history" ? "tickets" : newView);
             }}
           />
-        )}
 
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Header - Only show when NOT in admin view */}
-          {view !== "admin" && (
-            <header className="glass border-b border-border/50 sticky top-0 z-50 backdrop-blur-xl bg-background/95 h-16 flex-shrink-0">
-              <div className="h-full px-4 md:px-6">
-                <div className="flex items-center justify-between h-full gap-4">
-                  {/* Logo */}
-                  <button
-                    onClick={() => setView("hero")}
-                    className="flex items-center gap-2 hover:opacity-80 transition-opacity min-w-0"
-                  >
-                    <img 
-                      src={uinLogo} 
-                      alt="UIN Alauddin" 
-                      className="h-10 w-auto object-contain flex-shrink-0"
-                    />
-                    <div className="text-left min-w-0 hidden sm:block">
-                      <h1 className="text-sm font-bold gradient-text truncate">Sistem Keluhan Kampus</h1>
-                      <p className="text-xs text-muted-foreground truncate">UIN Alauddin Makassar</p>
-                    </div>
-                  </button>
-
-                  {/* Navigation */}
-                  <nav className="flex gap-2 items-center flex-shrink-0">
-                    <Button
-                      variant={view === "chat" ? "default" : "ghost"}
-                      className={`${view === "chat" ? "gradient-primary" : "glass"} h-9 text-sm`}
-                      onClick={() => setView("chat")}
-                      size="sm"
-                    >
-                      <Moon className="h-4 w-4 mr-2" />
-                      <span className="hidden md:inline">Chat</span>
-                    </Button>
-                    <Button
-                      variant={view === "tickets" ? "default" : "ghost"}
-                      className={`${view === "tickets" ? "gradient-primary" : "glass"} h-9 text-sm`}
-                      onClick={() => setView("tickets")}
-                      size="sm"
-                    >
-                      <Ticket className="h-4 w-4 mr-2" />
-                      <span className="hidden md:inline">Tiket</span>
-                    </Button>
-                    
-                    {isAdmin ? (
-                      <>
-                        <Button
-                          variant="ghost"
-                          className="glass h-9 text-sm"
-                          onClick={() => setView("admin")}
-                          size="sm"
-                        >
-                          <Shield className="h-4 w-4" />
-                          <span className="hidden md:inline ml-2">Admin</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          className="glass h-9 text-sm"
-                          onClick={async () => {
-                            await supabase.auth.signOut();
-                            window.location.href = "/admin-auth";
-                          }}
-                          size="sm"
-                        >
-                          <span className="text-xs">Keluar</span>
-                        </Button>
-                      </>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        className="glass h-9 text-sm"
-                        onClick={() => window.location.href = "/admin-auth"}
-                        size="sm"
-                      >
-                        <Shield className="h-4 w-4" />
-                        <span className="hidden md:inline ml-2">Login</span>
-                      </Button>
-                    )}
-                  </nav>
-                </div>
-              </div>
-            </header>
-          )}
-
-          {/* Fixed Toggle & Notification for Admin View - Both Mobile & Desktop */}
-          {view === "admin" && isAdmin && (
+          <div className="flex-1 flex flex-col min-w-0">
+            {/* Fixed Toggle & Notification for Admin View */}
             <div className="fixed top-4 right-4 z-40 flex gap-2 items-center">
               <SidebarTrigger>
                 <Button
@@ -230,28 +242,44 @@ const Index = () => {
                 </Button>
               </SidebarTrigger>
               <NotificationBell />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="glass h-10 w-10"
+                onClick={() => setView("hero")}
+                title="Kembali ke Beranda"
+              >
+                <img src={uinLogo} alt="Home" className="h-6 w-6 object-contain" />
+              </Button>
             </div>
-          )}
 
-          {/* Main Content */}
-          <main className="flex-1 overflow-auto">
-            {view === "admin" && isAdmin ? (
+            <main className="flex-1 overflow-auto">
               <div className="p-6 md:p-8 pt-16 lg:pt-8">
                 <AdminDashboard activeTab={adminTab} hideNotification={true} />
               </div>
-            ) : (
-              <div className="container mx-auto px-4 py-8">
-                <div className="animate-fade-in">
-                  {view === "chat" && <ChatInterface />}
-                  {view === "tickets" && <TicketHistory />}
-                </div>
-              </div>
-            )}
-          </main>
-          <Footer />
+            </main>
+            <Footer />
+          </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    );
+  }
+
+  // Chat / Tickets view with shared navbar
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      <Navbar />
+
+      <main className="flex-1 overflow-auto">
+        <div className="container mx-auto px-4 py-8">
+          <div className="animate-fade-in">
+            {view === "chat" && <ChatInterface />}
+            {view === "tickets" && <TicketHistory />}
+          </div>
+        </div>
+      </main>
+      <Footer />
+    </div>
   );
 };
 
