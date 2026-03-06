@@ -25,8 +25,8 @@ serve(async (req) => {
 
     console.log('Generating embedding for document:', documentId);
 
-    // Generate embedding using Lovable AI Gateway with OpenAI model
-    const embeddingResponse = await fetch("https://api.openai.com/v1/embeddings", {
+    // Generate embedding using Lovable AI Gateway
+    const embeddingResponse = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
