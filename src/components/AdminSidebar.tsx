@@ -107,7 +107,7 @@ export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSideba
         )}
       </SidebarHeader>
 
-      <SidebarContent className="bg-transparent overflow-hidden">
+      <SidebarContent className="bg-transparent overflow-y-auto">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1 px-2 py-4">
