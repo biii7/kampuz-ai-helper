@@ -52,7 +52,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="mt-8 pt-6 border-t border-border/50">
           <p className="text-xs text-center text-muted-foreground">
-            Dibuat dengan ❤️ untuk UIN Alauddin Makassar
+            Dibuat dengan ❤️ oleh Marni AI
           </p>
         </div>
       </div>
