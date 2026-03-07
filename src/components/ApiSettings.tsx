@@ -424,6 +424,7 @@ export const ApiSettings = () => {
                 </p>
               </div>
             </div>
+            )}
           </div>
 
           {/* Admin Contact Settings */}
