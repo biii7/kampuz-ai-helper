@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Key, Save, Eye, EyeOff } from "lucide-react";
+import { Key, Save, Eye, EyeOff, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const ApiSettings = () => {
@@ -22,6 +23,11 @@ export const ApiSettings = () => {
   const [isTestingFonnte, setIsTestingFonnte] = useState(false);
   const [testPhone, setTestPhone] = useState("");
   const [testFonntePhone, setTestFonntePhone] = useState("");
+  
+  // Toggle states for API sections
+  const [resendEnabled, setResendEnabled] = useState(false);
+  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
+  const [fonnteEnabled, setFonnteEnabled] = useState(true);
 
   useEffect(() => {
     loadSettings();
