@@ -44,7 +44,10 @@ export const ApiSettings = () => {
           "whatsapp_api_url",
           "fonnte_api_key",
           "admin_wa",
-          "admin_email"
+          "admin_email",
+          "resend_enabled",
+          "whatsapp_custom_enabled",
+          "fonnte_enabled"
         ]);
 
       if (error) throw error;
@@ -62,6 +65,12 @@ export const ApiSettings = () => {
           setAdminWa(setting.setting_value || "");
         } else if (setting.setting_key === "admin_email") {
           setAdminEmail(setting.setting_value || "");
+        } else if (setting.setting_key === "resend_enabled") {
+          setResendEnabled(setting.setting_value === "true");
+        } else if (setting.setting_key === "whatsapp_custom_enabled") {
+          setWhatsappEnabled(setting.setting_value === "true");
+        } else if (setting.setting_key === "fonnte_enabled") {
+          setFonnteEnabled(setting.setting_value !== "false");
         }
       });
     } catch (error) {
