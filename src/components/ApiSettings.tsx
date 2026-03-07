@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Key, Save, Eye, EyeOff } from "lucide-react";
+import { Key, Save, Eye, EyeOff, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const ApiSettings = () => {
@@ -22,6 +23,11 @@ export const ApiSettings = () => {
   const [isTestingFonnte, setIsTestingFonnte] = useState(false);
   const [testPhone, setTestPhone] = useState("");
   const [testFonntePhone, setTestFonntePhone] = useState("");
+  
+  // Toggle states for API sections
+  const [resendEnabled, setResendEnabled] = useState(false);
+  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
+  const [fonnteEnabled, setFonnteEnabled] = useState(true);
 
   useEffect(() => {
     loadSettings();
@@ -38,7 +44,10 @@ export const ApiSettings = () => {
           "whatsapp_api_url",
           "fonnte_api_key",
           "admin_wa",
-          "admin_email"
+          "admin_email",
+          "resend_enabled",
+          "whatsapp_custom_enabled",
+          "fonnte_enabled"
         ]);
 
       if (error) throw error;
@@ -56,6 +65,12 @@ export const ApiSettings = () => {
           setAdminWa(setting.setting_value || "");
         } else if (setting.setting_key === "admin_email") {
           setAdminEmail(setting.setting_value || "");
+        } else if (setting.setting_key === "resend_enabled") {
+          setResendEnabled(setting.setting_value === "true");
+        } else if (setting.setting_key === "whatsapp_custom_enabled") {
+          setWhatsappEnabled(setting.setting_value === "true");
+        } else if (setting.setting_key === "fonnte_enabled") {
+          setFonnteEnabled(setting.setting_value !== "false");
         }
       });
     } catch (error) {
@@ -73,6 +88,9 @@ export const ApiSettings = () => {
         { setting_key: "fonnte_api_key", setting_value: fonnteKey },
         { setting_key: "admin_wa", setting_value: adminWa },
         { setting_key: "admin_email", setting_value: adminEmail },
+        { setting_key: "resend_enabled", setting_value: String(resendEnabled) },
+        { setting_key: "whatsapp_custom_enabled", setting_value: String(whatsappEnabled) },
+        { setting_key: "fonnte_enabled", setting_value: String(fonnteEnabled) },
       ];
 
       for (const update of updates) {
@@ -199,58 +217,69 @@ export const ApiSettings = () => {
         <div className="space-y-6">
           {/* Resend API Key */}
           <div className="glass-card p-6 space-y-4">
-            <div className="flex items-start justify-between">
+            <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-1">Resend API Key</h3>
                 <p className="text-sm text-muted-foreground">
                   Digunakan untuk mengirim email otomatis ke pihak berwenang
                 </p>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="resend-key" className="text-foreground">API Key</Label>
-              <div className="relative">
-                <Input
-                  id="resend-key"
-                  type={showResend ? "text" : "password"}
-                  value={resendKey}
-                  onChange={(e) => setResendKey(e.target.value)}
-                  placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxx"
-                  className="glass border-border/50 pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowResend(!showResend)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showResend ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">{resendEnabled ? "Aktif" : "Nonaktif"}</span>
+                <Switch checked={resendEnabled} onCheckedChange={setResendEnabled} />
               </div>
-              <p className="text-xs text-muted-foreground">
-                Dapatkan API key dari{" "}
-                <a
-                  href="https://resend.com/api-keys"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  Resend Dashboard
-                </a>
-              </p>
             </div>
+            {resendEnabled && (
+              <div className="space-y-2 animate-fade-in">
+                <Label htmlFor="resend-key" className="text-foreground">API Key</Label>
+                <div className="relative">
+                  <Input
+                    id="resend-key"
+                    type={showResend ? "text" : "password"}
+                    value={resendKey}
+                    onChange={(e) => setResendKey(e.target.value)}
+                    placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxx"
+                    className="glass border-border/50 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowResend(!showResend)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showResend ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Dapatkan API key dari{" "}
+                  <a
+                    href="https://resend.com/api-keys"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    Resend Dashboard
+                  </a>
+                </p>
+              </div>
+            )}
           </div>
 
           {/* WhatsApp API Settings */}
           <div className="glass-card p-6 space-y-4">
-            <div className="flex items-start justify-between">
+            <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-1">WhatsApp API (Custom)</h3>
                 <p className="text-sm text-muted-foreground">
                   Digunakan untuk mengirim pesan WhatsApp otomatis via API custom
                 </p>
               </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">{whatsappEnabled ? "Aktif" : "Nonaktif"}</span>
+                <Switch checked={whatsappEnabled} onCheckedChange={setWhatsappEnabled} />
+              </div>
             </div>
-            <div className="space-y-4">
+            {whatsappEnabled && (
+              <div className="space-y-4 animate-fade-in">
               <div className="space-y-2">
                 <Label htmlFor="whatsapp-url" className="text-foreground">API URL</Label>
                 <Input
@@ -315,19 +344,25 @@ export const ApiSettings = () => {
                 </p>
               </div>
             </div>
+            )}
           </div>
 
           {/* Fonnte API Settings */}
           <div className="glass-card p-6 space-y-4">
-            <div className="flex items-start justify-between">
+            <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-1">Fonnte API</h3>
                 <p className="text-sm text-muted-foreground">
                   API WhatsApp menggunakan Fonnte untuk endpoint /api/keluhan
                 </p>
               </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">{fonnteEnabled ? "Aktif" : "Nonaktif"}</span>
+                <Switch checked={fonnteEnabled} onCheckedChange={setFonnteEnabled} />
+              </div>
             </div>
-            <div className="space-y-4">
+            {fonnteEnabled && (
+            <div className="space-y-4 animate-fade-in">
               <div className="space-y-2">
                 <Label htmlFor="fonnte-key" className="text-foreground">API Key Fonnte</Label>
                 <div className="relative">
@@ -389,6 +424,7 @@ export const ApiSettings = () => {
                 </p>
               </div>
             </div>
+            )}
           </div>
 
           {/* Admin Contact Settings */}
