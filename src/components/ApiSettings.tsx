@@ -88,6 +88,9 @@ export const ApiSettings = () => {
         { setting_key: "fonnte_api_key", setting_value: fonnteKey },
         { setting_key: "admin_wa", setting_value: adminWa },
         { setting_key: "admin_email", setting_value: adminEmail },
+        { setting_key: "resend_enabled", setting_value: String(resendEnabled) },
+        { setting_key: "whatsapp_custom_enabled", setting_value: String(whatsappEnabled) },
+        { setting_key: "fonnte_enabled", setting_value: String(fonnteEnabled) },
       ];
 
       for (const update of updates) {
