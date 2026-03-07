@@ -344,19 +344,25 @@ export const ApiSettings = () => {
                 </p>
               </div>
             </div>
+            )}
           </div>
 
           {/* Fonnte API Settings */}
           <div className="glass-card p-6 space-y-4">
-            <div className="flex items-start justify-between">
+            <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-1">Fonnte API</h3>
                 <p className="text-sm text-muted-foreground">
                   API WhatsApp menggunakan Fonnte untuk endpoint /api/keluhan
                 </p>
               </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">{fonnteEnabled ? "Aktif" : "Nonaktif"}</span>
+                <Switch checked={fonnteEnabled} onCheckedChange={setFonnteEnabled} />
+              </div>
             </div>
-            <div className="space-y-4">
+            {fonnteEnabled && (
+            <div className="space-y-4 animate-fade-in">
               <div className="space-y-2">
                 <Label htmlFor="fonnte-key" className="text-foreground">API Key Fonnte</Label>
                 <div className="relative">
