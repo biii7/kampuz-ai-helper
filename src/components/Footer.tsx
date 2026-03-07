@@ -8,11 +8,11 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Logo & Description */}
           <div className="flex flex-col items-center md:items-start space-y-4">
-            <img 
-              src={uinLogo} 
-              alt="UIN Alauddin Makassar" 
-              className="h-20 w-auto object-contain"
-            />
+            <img
+              src={uinLogo}
+              alt="UIN Alauddin Makassar"
+              className="h-20 w-auto object-contain" />
+            
             <p className="text-sm text-muted-foreground text-center md:text-left">
               Single Gateway & Sistem Triage Keluhan Otomatis berbasis AI untuk mahasiswa UIN Alauddin Makassar
             </p>
@@ -52,10 +52,10 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="mt-8 pt-6 border-t border-border/50">
           <p className="text-xs text-center text-muted-foreground">
-            Dibuat dengan ❤️ oleh Marni AI
+                                   Marni AI UIN Alauddin Makassar   
           </p>
         </div>
       </div>
-    </footer>
-  );
+    </footer>);
+
 }
