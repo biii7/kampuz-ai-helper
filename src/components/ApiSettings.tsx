@@ -217,58 +217,69 @@ export const ApiSettings = () => {
         <div className="space-y-6">
           {/* Resend API Key */}
           <div className="glass-card p-6 space-y-4">
-            <div className="flex items-start justify-between">
+            <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-1">Resend API Key</h3>
                 <p className="text-sm text-muted-foreground">
                   Digunakan untuk mengirim email otomatis ke pihak berwenang
                 </p>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="resend-key" className="text-foreground">API Key</Label>
-              <div className="relative">
-                <Input
-                  id="resend-key"
-                  type={showResend ? "text" : "password"}
-                  value={resendKey}
-                  onChange={(e) => setResendKey(e.target.value)}
-                  placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxx"
-                  className="glass border-border/50 pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowResend(!showResend)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showResend ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">{resendEnabled ? "Aktif" : "Nonaktif"}</span>
+                <Switch checked={resendEnabled} onCheckedChange={setResendEnabled} />
               </div>
-              <p className="text-xs text-muted-foreground">
-                Dapatkan API key dari{" "}
-                <a
-                  href="https://resend.com/api-keys"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  Resend Dashboard
-                </a>
-              </p>
             </div>
+            {resendEnabled && (
+              <div className="space-y-2 animate-fade-in">
+                <Label htmlFor="resend-key" className="text-foreground">API Key</Label>
+                <div className="relative">
+                  <Input
+                    id="resend-key"
+                    type={showResend ? "text" : "password"}
+                    value={resendKey}
+                    onChange={(e) => setResendKey(e.target.value)}
+                    placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxx"
+                    className="glass border-border/50 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowResend(!showResend)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showResend ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Dapatkan API key dari{" "}
+                  <a
+                    href="https://resend.com/api-keys"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    Resend Dashboard
+                  </a>
+                </p>
+              </div>
+            )}
           </div>
 
           {/* WhatsApp API Settings */}
           <div className="glass-card p-6 space-y-4">
-            <div className="flex items-start justify-between">
+            <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-1">WhatsApp API (Custom)</h3>
                 <p className="text-sm text-muted-foreground">
                   Digunakan untuk mengirim pesan WhatsApp otomatis via API custom
                 </p>
               </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">{whatsappEnabled ? "Aktif" : "Nonaktif"}</span>
+                <Switch checked={whatsappEnabled} onCheckedChange={setWhatsappEnabled} />
+              </div>
             </div>
-            <div className="space-y-4">
+            {whatsappEnabled && (
+              <div className="space-y-4 animate-fade-in">
               <div className="space-y-2">
                 <Label htmlFor="whatsapp-url" className="text-foreground">API URL</Label>
                 <Input
