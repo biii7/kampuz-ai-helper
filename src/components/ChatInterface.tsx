@@ -37,10 +37,25 @@ export const ChatInterface = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
 
+  // Auto-scroll messages to bottom only when user is already near bottom
+  const scrollMessagesToBottom = (smooth = false) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({
+      top: el.scrollHeight,
+      behavior: smooth ? "smooth" : "auto",
+    });
+  };
+
+  const isNearBottom = () => {
+    const el = scrollRef.current;
+    if (!el) return true;
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+  };
+
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    // Always stick to bottom when a new message arrives or content updates
+    scrollMessagesToBottom(false);
   }, [messages]);
 
   // Handle mobile keyboard: shrink container to visual viewport so input stays visible
@@ -48,26 +63,26 @@ export const ChatInterface = () => {
     const visualViewport = window.visualViewport;
     if (!visualViewport) return;
 
+    let rafId = 0;
     const handleResize = () => {
-      setViewportHeight(visualViewport.height);
-      // Keep input visible when keyboard opens
-      if (document.activeElement === inputRef.current) {
-        setTimeout(() => {
-          inputRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-          if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-          }
-        }, 100);
-      }
+      // Throttle with rAF to avoid jitter while keyboard animates
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        setViewportHeight(visualViewport.height);
+        // Only nudge messages list to bottom if user was already near bottom.
+        // Do NOT call scrollIntoView on the input — it makes the page jump.
+        if (document.activeElement === inputRef.current && isNearBottom()) {
+          scrollMessagesToBottom(false);
+        }
+      });
     };
 
     visualViewport.addEventListener("resize", handleResize);
-    visualViewport.addEventListener("scroll", handleResize);
     setViewportHeight(visualViewport.height);
 
     return () => {
+      cancelAnimationFrame(rafId);
       visualViewport.removeEventListener("resize", handleResize);
-      visualViewport.removeEventListener("scroll", handleResize);
     };
   }, []);
 
@@ -421,9 +436,8 @@ export const ChatInterface = () => {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             onFocus={() => {
-              setTimeout(() => {
-                inputRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-              }, 300);
+              // Scroll the messages list, not the page — avoids jumpy behavior
+              setTimeout(() => scrollMessagesToBottom(true), 350);
             }}
             placeholder="Ketik keluhan atau pertanyaan... (Enter untuk kirim, Shift+Enter baris baru)"
             disabled={isLoading}
