@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Send, Loader2, Moon, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,8 +33,9 @@ export const ChatInterface = () => {
   const [showConfetti, setShowConfetti] = useState(false);
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -42,23 +43,53 @@ export const ChatInterface = () => {
     }
   }, [messages]);
 
-  // Handle mobile keyboard: scroll input into view
+  // Handle mobile keyboard: shrink container to visual viewport so input stays visible
   useEffect(() => {
+    const visualViewport = window.visualViewport;
+    if (!visualViewport) return;
+
     const handleResize = () => {
-      // When virtual keyboard opens, scroll the input into view
+      setViewportHeight(visualViewport.height);
+      // Keep input visible when keyboard opens
       if (document.activeElement === inputRef.current) {
         setTimeout(() => {
           inputRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-        }, 300);
+          if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+          }
+        }, 100);
       }
     };
 
-    const visualViewport = window.visualViewport;
-    if (visualViewport) {
-      visualViewport.addEventListener("resize", handleResize);
-      return () => visualViewport.removeEventListener("resize", handleResize);
-    }
+    visualViewport.addEventListener("resize", handleResize);
+    visualViewport.addEventListener("scroll", handleResize);
+    setViewportHeight(visualViewport.height);
+
+    return () => {
+      visualViewport.removeEventListener("resize", handleResize);
+      visualViewport.removeEventListener("scroll", handleResize);
+    };
   }, []);
+
+  // Auto-resize textarea based on content
+  const autoResizeTextarea = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 120) + "px";
+  };
+
+  useEffect(() => {
+    autoResizeTextarea();
+  }, [input]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Enter = send, Shift+Enter = new line. Works on desktop & mobile keyboards.
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      handleSubmit(e as unknown as React.FormEvent);
+    }
+  };
 
   // Smooth typing effect
   const typeMessage = (content: string) => {
@@ -286,7 +317,11 @@ export const ChatInterface = () => {
     <div 
       ref={containerRef}
       className="glass-card max-w-5xl mx-auto overflow-hidden card-elevated relative flex flex-col"
-      style={{ maxHeight: "calc(100dvh - 8rem)" }}
+      style={{
+        maxHeight: viewportHeight
+          ? `${viewportHeight - 64}px`
+          : "calc(100dvh - 8rem)",
+      }}
     >
       {showConfetti && (
         <Confetti
@@ -379,21 +414,30 @@ export const ChatInterface = () => {
         onSubmit={handleSubmit} 
         className="p-2.5 md:p-4 border-t border-border/50 bg-background/80 backdrop-blur flex-shrink-0"
       >
-        <div className="flex gap-2 md:gap-3">
-          <Input
+        <div className="flex gap-2 md:gap-3 items-end">
+          <Textarea
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ketik keluhan atau pertanyaan..."
+            onKeyDown={handleKeyDown}
+            onFocus={() => {
+              setTimeout(() => {
+                inputRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+              }, 300);
+            }}
+            placeholder="Ketik keluhan atau pertanyaan... (Enter untuk kirim, Shift+Enter baris baru)"
             disabled={isLoading}
-            className="glass flex-1 rounded-full px-3 md:px-5 py-2.5 md:py-5 text-xs md:text-base border-border/50 focus:border-primary transition-all"
+            rows={1}
+            enterKeyHint="send"
+            className="glass flex-1 rounded-2xl px-3 md:px-5 py-2.5 md:py-3 text-sm md:text-base border-border/50 focus:border-primary transition-all resize-none min-h-[40px] md:min-h-[44px] max-h-[120px] leading-relaxed"
+            style={{ fontSize: "16px" }}
           />
           <Button
             type="submit"
             disabled={isLoading || !input.trim()}
-            className="gradient-primary rounded-full h-9 w-9 md:h-11 md:w-11 p-0 hover:scale-110 transition-transform shadow-lg flex-shrink-0"
+            className="gradient-primary rounded-full h-10 w-10 md:h-11 md:w-11 p-0 hover:scale-110 transition-transform shadow-lg flex-shrink-0"
           >
-            <Send className="h-3.5 w-3.5 md:h-5 md:w-5" />
+            <Send className="h-4 w-4 md:h-5 md:w-5" />
           </Button>
         </div>
       </form>
