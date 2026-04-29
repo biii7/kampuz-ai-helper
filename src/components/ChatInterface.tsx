@@ -53,6 +53,15 @@ export const ChatInterface = () => {
     return el.scrollHeight - el.scrollTop - el.clientHeight < 120;
   };
 
+  // Detect whether the on-screen keyboard is open by comparing visualViewport
+  // height to the window's inner height. A meaningful gap (>150px) means the
+  // keyboard is most likely visible.
+  const isKeyboardOpen = () => {
+    const vv = window.visualViewport;
+    if (!vv) return false;
+    return window.innerHeight - vv.height > 150;
+  };
+
   useEffect(() => {
     // Always stick to bottom when a new message arrives or content updates
     scrollMessagesToBottom(false);
