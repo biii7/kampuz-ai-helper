@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Send, Loader2, Moon, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,8 +33,9 @@ export const ChatInterface = () => {
   const [showConfetti, setShowConfetti] = useState(false);
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -42,23 +43,53 @@ export const ChatInterface = () => {
     }
   }, [messages]);
 
-  // Handle mobile keyboard: scroll input into view
+  // Handle mobile keyboard: shrink container to visual viewport so input stays visible
   useEffect(() => {
+    const visualViewport = window.visualViewport;
+    if (!visualViewport) return;
+
     const handleResize = () => {
-      // When virtual keyboard opens, scroll the input into view
+      setViewportHeight(visualViewport.height);
+      // Keep input visible when keyboard opens
       if (document.activeElement === inputRef.current) {
         setTimeout(() => {
           inputRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-        }, 300);
+          if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+          }
+        }, 100);
       }
     };
 
-    const visualViewport = window.visualViewport;
-    if (visualViewport) {
-      visualViewport.addEventListener("resize", handleResize);
-      return () => visualViewport.removeEventListener("resize", handleResize);
-    }
+    visualViewport.addEventListener("resize", handleResize);
+    visualViewport.addEventListener("scroll", handleResize);
+    setViewportHeight(visualViewport.height);
+
+    return () => {
+      visualViewport.removeEventListener("resize", handleResize);
+      visualViewport.removeEventListener("scroll", handleResize);
+    };
   }, []);
+
+  // Auto-resize textarea based on content
+  const autoResizeTextarea = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 120) + "px";
+  };
+
+  useEffect(() => {
+    autoResizeTextarea();
+  }, [input]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Enter = send, Shift+Enter = new line. Works on desktop & mobile keyboards.
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      handleSubmit(e as unknown as React.FormEvent);
+    }
+  };
 
   // Smooth typing effect
   const typeMessage = (content: string) => {
