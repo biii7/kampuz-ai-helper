@@ -317,7 +317,11 @@ export const ChatInterface = () => {
     <div 
       ref={containerRef}
       className="glass-card max-w-5xl mx-auto overflow-hidden card-elevated relative flex flex-col"
-      style={{ maxHeight: "calc(100dvh - 8rem)" }}
+      style={{
+        maxHeight: viewportHeight
+          ? `${viewportHeight - 64}px`
+          : "calc(100dvh - 8rem)",
+      }}
     >
       {showConfetti && (
         <Confetti
