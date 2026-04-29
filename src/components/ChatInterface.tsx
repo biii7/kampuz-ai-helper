@@ -442,7 +442,13 @@ export const ChatInterface = () => {
           <Textarea
             ref={inputRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              // Auto-scroll while typing only if keyboard is open and user is near bottom
+              if (isKeyboardOpen() && isNearBottom()) {
+                requestAnimationFrame(() => scrollMessagesToBottom(false));
+              }
+            }}
             onKeyDown={handleKeyDown}
             onFocus={() => {
               // Scroll the messages list, not the page — avoids jumpy behavior
