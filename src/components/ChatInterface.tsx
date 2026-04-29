@@ -436,9 +436,8 @@ export const ChatInterface = () => {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             onFocus={() => {
-              setTimeout(() => {
-                inputRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-              }, 300);
+              // Scroll the messages list, not the page — avoids jumpy behavior
+              setTimeout(() => scrollMessagesToBottom(true), 350);
             }}
             placeholder="Ketik keluhan atau pertanyaan... (Enter untuk kirim, Shift+Enter baris baru)"
             disabled={isLoading}
