@@ -121,11 +121,16 @@ export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSideba
                     }}
                     tooltip={collapsed ? item.label : undefined}
                     className={`
-                      hover:bg-accent/10 text-foreground w-full
-                      ${collapsed ? "justify-center px-2 mx-auto" : "justify-start px-4"}
-                      transition-all duration-200 rounded-xl h-11
+                      hover:bg-accent/10 text-foreground
+                      ${collapsed ? "!w-10 !h-10 !p-0 mx-auto flex items-center justify-center" : "w-full justify-start px-4 h-11"}
+                      transition-all duration-200 rounded-xl
                     `}
                   >
+                    <item.icon className={`flex-shrink-0 ${collapsed ? "h-5 w-5" : "h-5 w-5 mr-3"}`} />
+                    {!collapsed && <span className="font-medium truncate">{item.label}</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
                     <item.icon className={`flex-shrink-0 ${collapsed ? "h-5 w-5" : "h-5 w-5 mr-3"}`} />
                     {!collapsed && <span className="font-medium truncate">{item.label}</span>}
                   </SidebarMenuButton>
