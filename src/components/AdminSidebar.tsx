@@ -110,7 +110,7 @@ export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSideba
       <SidebarContent className="bg-transparent overflow-y-auto">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1 px-2 py-4">
+            <SidebarMenu className={`space-y-1 py-4 ${collapsed ? "px-0" : "px-2"}`}>
               {/* Navigation Items - Chat & History */}
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
@@ -121,9 +121,9 @@ export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSideba
                     }}
                     tooltip={collapsed ? item.label : undefined}
                     className={`
-                      hover:bg-accent/10 text-foreground w-full
-                      ${collapsed ? "justify-center px-2 mx-auto" : "justify-start px-4"}
-                      transition-all duration-200 rounded-xl h-11
+                      hover:bg-accent/10 text-foreground
+                      ${collapsed ? "!w-10 !h-10 !p-0 mx-auto flex items-center justify-center" : "w-full justify-start px-4 h-11"}
+                      transition-all duration-200 rounded-xl
                     `}
                   >
                     <item.icon className={`flex-shrink-0 ${collapsed ? "h-5 w-5" : "h-5 w-5 mr-3"}`} />
@@ -148,12 +148,12 @@ export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSideba
                     isActive={activeTab === item.id}
                     tooltip={collapsed ? item.label : undefined}
                     className={`
-                      w-full transition-all duration-200 rounded-xl h-11
+                      transition-all duration-200 rounded-xl
                       ${activeTab === item.id 
                         ? "gradient-primary text-white shadow-lg" 
                         : "hover:bg-primary/10 text-foreground"
                       }
-                      ${collapsed ? "justify-center px-2 mx-auto" : "justify-start px-4"}
+                      ${collapsed ? "!w-10 !h-10 !p-0 mx-auto flex items-center justify-center" : "w-full justify-start px-4 h-11"}
                     `}
                   >
                     <item.icon className={`flex-shrink-0 ${collapsed ? "h-5 w-5" : "h-5 w-5 mr-3"}`} />
