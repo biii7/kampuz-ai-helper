@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Loader2, Moon, User } from "lucide-react";
+import { Send, Loader2, Moon, User, ArrowDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { TicketDisplay } from "./TicketDisplay";
@@ -36,6 +36,8 @@ export const ChatInterface = () => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const focusScrollIntervalRef = useRef<number | null>(null);
 
   // Auto-scroll messages to bottom only when user is already near bottom
   const scrollMessagesToBottom = (smooth = false) => {
@@ -66,6 +68,18 @@ export const ChatInterface = () => {
     // Always stick to bottom when a new message arrives or content updates
     scrollMessagesToBottom(false);
   }, [messages]);
+
+  // Track scroll position to toggle the "scroll to bottom" button
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      setShowScrollButton(!isNearBottom());
+    };
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Handle mobile keyboard: shrink container to visual viewport so input stays visible
   useEffect(() => {
@@ -433,6 +447,18 @@ export const ChatInterface = () => {
         </div>
       </div>
 
+      {/* Floating "scroll to bottom" button — appears when user scrolls up */}
+      {showScrollButton && (
+        <Button
+          type="button"
+          onClick={() => scrollMessagesToBottom(true)}
+          aria-label="Scroll ke pesan terbaru"
+          className="absolute right-4 bottom-24 md:bottom-28 z-10 h-10 w-10 rounded-full p-0 gradient-primary shadow-xl hover:scale-110 transition-transform animate-fade-in"
+        >
+          <ArrowDown className="h-5 w-5" />
+        </Button>
+      )}
+
       {/* Input Box - sticky at bottom, safe from keyboard */}
       <form 
         onSubmit={handleSubmit} 
@@ -453,6 +479,22 @@ export const ChatInterface = () => {
             onFocus={() => {
               // Scroll the messages list, not the page — avoids jumpy behavior
               setTimeout(() => scrollMessagesToBottom(true), 350);
+              // While focused, keep snapping to bottom if keyboard is open and
+              // user is near the bottom — even before they start typing.
+              if (focusScrollIntervalRef.current) {
+                window.clearInterval(focusScrollIntervalRef.current);
+              }
+              focusScrollIntervalRef.current = window.setInterval(() => {
+                if (isKeyboardOpen() && isNearBottom()) {
+                  scrollMessagesToBottom(false);
+                }
+              }, 250);
+            }}
+            onBlur={() => {
+              if (focusScrollIntervalRef.current) {
+                window.clearInterval(focusScrollIntervalRef.current);
+                focusScrollIntervalRef.current = null;
+              }
             }}
             placeholder="Ketik keluhan atau pertanyaan... (Enter untuk kirim, Shift+Enter baris baru)"
             disabled={isLoading}
