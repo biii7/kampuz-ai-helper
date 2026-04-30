@@ -1,9 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ChatInterface } from "@/components/ChatInterface";
-import { TicketHistory } from "@/components/TicketHistory";
-import { AdminDashboard } from "@/components/AdminDashboard";
-import { MessageSquare, Ticket, Sparkles, Shield, Menu, Moon, LogOut, Settings } from "lucide-react";
+import { MessageSquare, Ticket, Sparkles, Shield, Menu, Moon, LogOut, Settings, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
@@ -11,7 +9,26 @@ import { NotificationBell } from "@/components/NotificationBell";
 import Footer from "@/components/Footer";
 import uinLogo from "@/assets/uin-logo.png";
 
+// Heavy views are code-split so the hero loads instantly and switching
+// view only fetches the chunk that's actually needed.
+const ChatInterface = lazy(() =>
+  import("@/components/ChatInterface").then((m) => ({ default: m.ChatInterface }))
+);
+const TicketHistory = lazy(() =>
+  import("@/components/TicketHistory").then((m) => ({ default: m.TicketHistory }))
+);
+const AdminDashboard = lazy(() =>
+  import("@/components/AdminDashboard").then((m) => ({ default: m.AdminDashboard }))
+);
+
+const ViewLoader = () => (
+  <div className="flex items-center justify-center py-20">
+    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+  </div>
+);
+
 const Index = () => {
+  const navigate = useNavigate();
   const [view, setView] = useState<"hero" | "chat" | "tickets" | "admin">("hero");
   const [adminTab, setAdminTab] = useState<"tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins" | "documents" | "logs">("tickets");
   const [isAdmin, setIsAdmin] = useState(false);
