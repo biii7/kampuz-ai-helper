@@ -467,6 +467,22 @@ export const ChatInterface = () => {
             onFocus={() => {
               // Scroll the messages list, not the page — avoids jumpy behavior
               setTimeout(() => scrollMessagesToBottom(true), 350);
+              // While focused, keep snapping to bottom if keyboard is open and
+              // user is near the bottom — even before they start typing.
+              if (focusScrollIntervalRef.current) {
+                window.clearInterval(focusScrollIntervalRef.current);
+              }
+              focusScrollIntervalRef.current = window.setInterval(() => {
+                if (isKeyboardOpen() && isNearBottom()) {
+                  scrollMessagesToBottom(false);
+                }
+              }, 250);
+            }}
+            onBlur={() => {
+              if (focusScrollIntervalRef.current) {
+                window.clearInterval(focusScrollIntervalRef.current);
+                focusScrollIntervalRef.current = null;
+              }
             }}
             placeholder="Ketik keluhan atau pertanyaan... (Enter untuk kirim, Shift+Enter baris baru)"
             disabled={isLoading}
