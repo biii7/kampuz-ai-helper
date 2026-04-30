@@ -36,6 +36,8 @@ export const ChatInterface = () => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const focusScrollIntervalRef = useRef<number | null>(null);
 
   // Auto-scroll messages to bottom only when user is already near bottom
   const scrollMessagesToBottom = (smooth = false) => {
