@@ -447,6 +447,18 @@ export const ChatInterface = () => {
         </div>
       </div>
 
+      {/* Floating "scroll to bottom" button — appears when user scrolls up */}
+      {showScrollButton && (
+        <Button
+          type="button"
+          onClick={() => scrollMessagesToBottom(true)}
+          aria-label="Scroll ke pesan terbaru"
+          className="absolute right-4 bottom-24 md:bottom-28 z-10 h-10 w-10 rounded-full p-0 gradient-primary shadow-xl hover:scale-110 transition-transform animate-fade-in"
+        >
+          <ArrowDown className="h-5 w-5" />
+        </Button>
+      )}
+
       {/* Input Box - sticky at bottom, safe from keyboard */}
       <form 
         onSubmit={handleSubmit} 
