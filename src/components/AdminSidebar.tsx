@@ -131,11 +131,6 @@ export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSideba
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-                    <item.icon className={`flex-shrink-0 ${collapsed ? "h-5 w-5" : "h-5 w-5 mr-3"}`} />
-                    {!collapsed && <span className="font-medium truncate">{item.label}</span>}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
 
               {/* Separator */}
               <div className="my-4 px-2">
