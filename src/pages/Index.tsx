@@ -158,7 +158,7 @@ const Index = () => {
               <Button
                 variant="ghost"
                 className="h-9 w-9 p-0 text-muted-foreground/40 hover:text-muted-foreground/70"
-                onClick={() => (window.location.href = "/admin-auth")}
+                onClick={() => navigate("/admin-auth")}
                 size="sm"
                 title="Admin Login"
               >
