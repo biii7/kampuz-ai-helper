@@ -295,7 +295,9 @@ const Index = () => {
 
             <main className="flex-1 overflow-auto">
               <div className="p-6 md:p-8 pt-16 lg:pt-8">
-                <AdminDashboard activeTab={adminTab} hideNotification={true} />
+                <Suspense fallback={<ViewLoader />}>
+                  <AdminDashboard activeTab={adminTab} hideNotification={true} />
+                </Suspense>
               </div>
             </main>
             <Footer />
