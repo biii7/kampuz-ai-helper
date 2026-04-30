@@ -315,8 +315,10 @@ const Index = () => {
       <main className="flex-1 overflow-auto min-h-0">
         <div className="container mx-auto px-3 md:px-4 py-4 md:py-8 pb-safe">
           <div className="animate-fade-in">
-            {view === "chat" && <ChatInterface />}
-            {view === "tickets" && <TicketHistory />}
+            <Suspense fallback={<ViewLoader />}>
+              {view === "chat" && <ChatInterface />}
+              {view === "tickets" && <TicketHistory />}
+            </Suspense>
           </div>
         </div>
       </main>
