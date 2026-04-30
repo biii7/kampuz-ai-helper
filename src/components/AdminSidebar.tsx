@@ -110,7 +110,7 @@ export function AdminSidebar({ activeTab, onTabChange, onNavigate }: AdminSideba
       <SidebarContent className="bg-transparent overflow-y-auto">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1 px-2 py-4">
+            <SidebarMenu className={`space-y-1 py-4 ${collapsed ? "px-0" : "px-2"}`}>
               {/* Navigation Items - Chat & History */}
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
