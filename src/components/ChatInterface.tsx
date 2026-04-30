@@ -69,6 +69,18 @@ export const ChatInterface = () => {
     scrollMessagesToBottom(false);
   }, [messages]);
 
+  // Track scroll position to toggle the "scroll to bottom" button
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      setShowScrollButton(!isNearBottom());
+    };
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
+
   // Handle mobile keyboard: shrink container to visual viewport so input stays visible
   useEffect(() => {
     const visualViewport = window.visualViewport;
