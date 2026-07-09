@@ -19,6 +19,7 @@ import { MessageTemplates } from "./MessageTemplates";
 import { ForwardingStats } from "./ForwardingStats";
 import { CampusDocuments } from "./CampusDocuments";
 import { ForwardingLogs } from "./ForwardingLogs";
+import { CategoryManagement } from "./CategoryManagement";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { NotificationBell } from "./NotificationBell";
 
