@@ -62,17 +62,30 @@ Balas hanya dengan satu kata: keluhan atau informasi`;
 
     // Klasifikasi keluhan
     if (type === "classify") {
-      const classifyPrompt = `Klasifikasikan teks keluhan berikut ke salah satu kategori:
-- fasilitas (masalah gedung, ruangan, AC, toilet, dll)
+      // Fetch categories from database (admin-managed)
+      const { data: dbCategories } = await supabase
+        .from("complaint_categories")
+        .select("name, description")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+
+      const categoryList = (dbCategories && dbCategories.length > 0)
+        ? dbCategories.map((c: any) => `- ${c.name} (${c.description})`).join("\n")
+        : `- fasilitas (masalah gedung, ruangan, AC, toilet, dll)
 - akademik (masalah kuliah, dosen, nilai, jadwal, dll)
 - administrasi (masalah KRS, surat, dokumen, dll)
 - keuangan (masalah biaya kuliah, beasiswa, dll)
 - pelanggaran (masalah kedisiplinan, SPI, DUMAS)
 - ppid (permintaan informasi publik)
+- lainnya (tidak masuk kategori di atas)`;
+
+      const classifyPrompt = `Klasifikasikan teks keluhan berikut ke salah satu kategori berikut. Pelajari deskripsi setiap kategori dengan teliti sebelum memilih:
+
+${categoryList}
 
 Teks: ${message}
 
-Balas hanya dengan nama kategori tanpa penjelasan.`;
+Balas HANYA dengan nama kategori (huruf kecil) tanpa penjelasan.`;
 
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
