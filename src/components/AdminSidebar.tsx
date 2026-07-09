@@ -1,4 +1,4 @@
-import { FileText, TrendingUp, BarChart3, Mail, Send, Settings, Users, Shield, LogOut, User, Moon, History, Menu, X, BookOpen } from "lucide-react";
+import { FileText, TrendingUp, BarChart3, Mail, Send, Settings, Users, Shield, LogOut, User, Moon, History, Menu, X, BookOpen, FolderOpen } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
