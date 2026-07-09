@@ -30,7 +30,7 @@ const ViewLoader = () => (
 const Index = () => {
   const navigate = useNavigate();
   const [view, setView] = useState<"hero" | "chat" | "tickets" | "admin">("hero");
-  const [adminTab, setAdminTab] = useState<"tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins" | "documents" | "logs">("tickets");
+  const [adminTab, setAdminTab] = useState<"tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins" | "documents" | "logs" | "categories">("tickets");
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {

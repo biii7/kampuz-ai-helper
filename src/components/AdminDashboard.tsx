@@ -19,6 +19,7 @@ import { MessageTemplates } from "./MessageTemplates";
 import { ForwardingStats } from "./ForwardingStats";
 import { CampusDocuments } from "./CampusDocuments";
 import { ForwardingLogs } from "./ForwardingLogs";
+import { CategoryManagement } from "./CategoryManagement";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { NotificationBell } from "./NotificationBell";
 
@@ -65,7 +66,7 @@ const authorityOptions = [
 ];
 
 interface AdminDashboardProps {
-  activeTab: "tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins" | "documents" | "logs";
+  activeTab: "tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins" | "documents" | "logs" | "categories";
   hideNotification?: boolean;
 }
 
@@ -777,6 +778,8 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
           <ForwardingLogs />
         </>
       )}
+
+      {activeTab === "categories" && <CategoryManagement />}
     </div>
   );
 };
