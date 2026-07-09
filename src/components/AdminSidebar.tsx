@@ -19,7 +19,7 @@ import uinLogo from "@/assets/uin-logo.png";
 
 interface AdminSidebarProps {
   activeTab: string;
-  onTabChange: (tab: "tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins" | "documents" | "logs") => void;
+  onTabChange: (tab: "tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins" | "documents" | "logs" | "categories") => void;
   onNavigate?: (view: "chat" | "history") => void;
 }
 
@@ -32,6 +32,7 @@ const menuItems = [
   { id: "tickets", label: "Kelola Tiket", icon: FileText },
   { id: "stats", label: "Statistik", icon: TrendingUp },
   { id: "analytics", label: "Analitik", icon: BarChart3 },
+  { id: "categories", label: "Kategori", icon: FolderOpen },
   { id: "documents", label: "Dokumen Kampus", icon: BookOpen },
   { id: "templates", label: "Template Pesan", icon: Mail },
   { id: "contacts", label: "Kontak", icon: Send },
