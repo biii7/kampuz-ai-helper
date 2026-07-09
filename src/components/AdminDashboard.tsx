@@ -65,7 +65,7 @@ const authorityOptions = [
 ];
 
 interface AdminDashboardProps {
-  activeTab: "tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins" | "documents" | "logs";
+  activeTab: "tickets" | "stats" | "analytics" | "templates" | "contacts" | "api" | "admins" | "documents" | "logs" | "categories";
   hideNotification?: boolean;
 }
 
