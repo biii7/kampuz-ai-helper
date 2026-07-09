@@ -778,6 +778,8 @@ export const AdminDashboard = ({ activeTab, hideNotification = false }: AdminDas
           <ForwardingLogs />
         </>
       )}
+
+      {activeTab === "categories" && <CategoryManagement />}
     </div>
   );
 };
