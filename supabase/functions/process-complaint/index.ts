@@ -158,29 +158,60 @@ Balas HANYA dengan JSON tanpa penjelasan. Contoh:
     // RAG untuk pertanyaan informasi dengan caching dan semantic search
     if (type === "rag") {
       console.log('RAG request received for:', message);
-      
-      // Check cache first
+
       const normalizedQuestion = message.toLowerCase().trim();
+
+      // ===== Query Expansion: perluas singkatan umum UIN Alauddin =====
+      // Supaya "UKT TI" bisa cocok dengan dokumen "UKT Fakultas Sains dan Teknologi"
+      // yang di dalamnya memuat prodi Teknik Informatika.
+      const abbreviations: Record<string, string> = {
+        "\\bti\\b": "Teknik Informatika",
+        "\\bsi\\b": "Sistem Informasi",
+        "\\bfst\\b": "Fakultas Sains dan Teknologi",
+        "\\bfeb\\b": "Fakultas Ekonomi dan Bisnis Islam",
+        "\\bftk\\b": "Fakultas Tarbiyah dan Keguruan",
+        "\\bfah\\b": "Fakultas Adab dan Humaniora",
+        "\\bfdk\\b": "Fakultas Dakwah dan Komunikasi",
+        "\\bfsh\\b": "Fakultas Syariah dan Hukum",
+        "\\bfuf\\b": "Fakultas Ushuluddin dan Filsafat",
+        "\\bfkik\\b": "Fakultas Kedokteran dan Ilmu Kesehatan",
+        "\\bpai\\b": "Pendidikan Agama Islam",
+        "\\bpba\\b": "Pendidikan Bahasa Arab",
+        "\\bhki\\b": "Hukum Keluarga Islam",
+        "\\bukt\\b": "Uang Kuliah Tunggal UKT",
+        "\\bkrs\\b": "Kartu Rencana Studi KRS",
+        "\\bkhs\\b": "Kartu Hasil Studi KHS",
+        "\\bipk\\b": "Indeks Prestasi Kumulatif IPK",
+        "\\bspi\\b": "Sumbangan Pembangunan Institusi SPI",
+      };
+      let expandedMessage = message;
+      for (const [pattern, expansion] of Object.entries(abbreviations)) {
+        expandedMessage = expandedMessage.replace(new RegExp(pattern, "gi"), expansion);
+      }
+      if (expandedMessage !== message) {
+        console.log('Query expanded:', expandedMessage);
+      }
+
+      // Check cache — pakai exact match agar tidak mengembalikan jawaban tidak relevan
       const { data: cachedAnswer } = await supabase
         .from("rag_cache")
         .select("*")
-        .ilike("question", `%${normalizedQuestion}%`)
+        .eq("question", normalizedQuestion)
         .order("access_count", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (cachedAnswer) {
         console.log('Cache hit! Returning cached answer');
-        // Update cache access count
         await supabase
           .from("rag_cache")
-          .update({ 
+          .update({
             access_count: cachedAnswer.access_count + 1,
             updated_at: new Date().toISOString()
           })
           .eq("id", cachedAnswer.id);
 
-        return new Response(JSON.stringify({ 
+        return new Response(JSON.stringify({
           answer: cachedAnswer.answer,
           documentsUsed: cachedAnswer.documents_used,
           cached: true
@@ -191,7 +222,7 @@ Balas HANYA dengan JSON tanpa penjelasan. Contoh:
 
       console.log('Cache miss, generating new answer with semantic search');
 
-      // Generate embedding for the question
+      // Generate embedding untuk pertanyaan yang sudah diperluas
       let queryEmbedding = null;
       try {
         const embeddingResponse = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
@@ -202,7 +233,7 @@ Balas HANYA dengan JSON tanpa penjelasan. Contoh:
           },
           body: JSON.stringify({
             model: "text-embedding-3-small",
-            input: message,
+            input: expandedMessage,
           }),
         });
 
@@ -213,21 +244,18 @@ Balas HANYA dengan JSON tanpa penjelasan. Contoh:
         }
       } catch (embError) {
         console.error('Error generating query embedding:', embError);
-        // Continue without semantic search if embedding fails
       }
 
-      let documents;
-      let documentCount = 0;
+      let documents: any[] = [];
 
-      // Use semantic search if embedding available
+      // Semantic search dengan threshold rendah agar dokumen fakultas ikut terambil
       if (queryEmbedding) {
-        console.log('Using semantic search with vector similarity');
         const { data: semanticDocs, error: semanticError } = await supabase.rpc(
           'match_documents',
           {
             query_embedding: queryEmbedding,
-            match_threshold: 0.5,
-            match_count: 10
+            match_threshold: 0.25,
+            match_count: 15
           }
         );
 
@@ -237,32 +265,58 @@ Balas HANYA dengan JSON tanpa penjelasan. Contoh:
         }
       }
 
-      // Fallback to fetching all documents if semantic search fails
-      if (!documents || documents.length === 0) {
-        console.log('Using fallback: fetching all documents');
-        const { data: allDocs, error: docError } = await supabase
+      // Keyword fallback: cari dokumen yang judul/konten memuat kata kunci dari query
+      // Ini menangkap kasus "UKT TI" -> dokumen berjudul "UKT Sains dan Teknologi"
+      const keywords = Array.from(new Set(
+        expandedMessage
+          .toLowerCase()
+          .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+          .split(/\s+/)
+          .filter((w) => w.length >= 3 && !['yang','untuk','pada','dari','apa','bagaimana','tentang','saya','ada','dan','atau'].includes(w))
+      ));
+
+      if (keywords.length > 0) {
+        const orFilter = keywords
+          .map((k) => `title.ilike.%${k}%,content.ilike.%${k}%`)
+          .join(',');
+        const { data: kwDocs } = await supabase
           .from("campus_documents")
           .select("*")
-          .order("created_at", { ascending: false });
+          .or(orFilter)
+          .limit(15);
 
-        if (docError) {
-          console.error('Error fetching documents:', docError);
+        if (kwDocs && kwDocs.length > 0) {
+          const existingIds = new Set(documents.map((d: any) => d.id));
+          for (const d of kwDocs) {
+            if (!existingIds.has(d.id)) documents.push(d);
+          }
+          console.log(`Keyword search added documents, total now: ${documents.length}`);
         }
-        documents = allDocs || [];
       }
 
+      // Fallback terakhir: ambil semua dokumen
+      if (documents.length === 0) {
+        const { data: allDocs } = await supabase
+          .from("campus_documents")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(20);
+        documents = allDocs || [];
+        console.log(`Fallback: loaded ${documents.length} documents`);
+      }
+
+      const documentCount = documents.length;
       let context = "";
-      documentCount = documents.length;
 
       if (documents.length > 0) {
-        // Build context from documents
+        // Kirim konten lebih panjang (8000 char) agar detail prodi di dalam dokumen fakultas ikut terbaca
         context = documents.map((doc: any) => {
           const title = doc.title || 'Dokumen Tanpa Judul';
           const category = doc.metadata?.category || '';
           const source = doc.metadata?.source || '';
-          const content = doc.content?.substring(0, 2000) || '';
+          const content = doc.content?.substring(0, 8000) || '';
           const similarity = doc.similarity ? ` (Relevansi: ${(doc.similarity * 100).toFixed(1)}%)` : '';
-          
+
           return `=== ${title}${similarity} ===
 Kategori: ${category}
 Sumber: ${source}
@@ -270,32 +324,34 @@ Sumber: ${source}
 ${content}
 `;
         }).join("\n\n");
-        
+
         console.log(`Using ${documentCount} documents as context, total length: ${context.length} chars`);
       } else {
         context = "Belum ada dokumen kampus yang tersedia.";
-        console.log('No documents found in database');
       }
 
-      const ragPrompt = `Kamu adalah asisten informasi kampus UIN Alauddin Makassar. 
+      const ragPrompt = `Kamu adalah asisten informasi kampus UIN Alauddin Makassar.
 
-PENTING: Gunakan HANYA informasi dari dokumen di bawah ini untuk menjawab pertanyaan. Jangan membuat informasi baru atau menambahkan fakta yang tidak ada dalam dokumen.
+PENTING: Gunakan HANYA informasi dari dokumen di bawah ini untuk menjawab pertanyaan. Jangan mengarang.
 
 === DOKUMEN KAMPUS (${documentCount} dokumen) ===
 ${context}
 === AKHIR DOKUMEN ===
 
-Pertanyaan User: ${message}
+Pertanyaan User (asli): ${message}
+Pertanyaan setelah ekspansi singkatan: ${expandedMessage}
 
-Instruksi:
-1. Baca semua dokumen dengan teliti
-2. Cari informasi yang RELEVAN dengan pertanyaan
-3. Jawab dengan bahasa yang ramah, jelas, dan Islamic
-4. Jika informasi ADA dalam dokumen: berikan jawaban lengkap dengan menyebutkan sumber/kategori dokumen
-5. Jika informasi TIDAK ADA dalam dokumen: katakan dengan jujur "Mohon maaf, informasi tersebut belum tersedia dalam dokumen kampus kami. Silakan menghubungi bagian [sebutkan bagian yang relevan] untuk informasi lebih lanjut."
-6. Gunakan salam Islamic yang sesuai (Assalamu'alaikum, Alhamdulillah, dll)
+Panduan menjawab:
+1. Baca SETIAP dokumen sampai selesai — jangan hanya membaca judulnya.
+2. Judul dokumen sering menyebut FAKULTAS (contoh: "UKT Fakultas Sains dan Teknologi"), sementara isi dokumen memuat rincian per PRODI (contoh: Teknik Informatika, Sistem Informasi, Matematika). Jika user bertanya tentang prodi tertentu, PERIKSA ISI dokumen fakultas yang membawahinya.
+3. Kenali singkatan umum: TI = Teknik Informatika, SI = Sistem Informasi, FST = Fakultas Sains dan Teknologi, UKT = Uang Kuliah Tunggal, dll. Prodi TI/SI berada di bawah FST.
+4. Jika menemukan tabel/daftar UKT per prodi di dalam dokumen fakultas, kutip angka spesifik untuk prodi yang ditanyakan.
+5. Sebutkan nama dokumen sumber saat menjawab.
+6. Jika benar-benar tidak ada di dokumen, katakan jujur: "Mohon maaf, informasi tersebut belum tersedia dalam dokumen kampus kami."
+7. Gunakan bahasa ramah dan Islamic (Assalamu'alaikum, dll).
 
 Jawaban:`;
+
 
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
