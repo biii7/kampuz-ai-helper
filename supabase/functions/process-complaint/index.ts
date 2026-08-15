@@ -545,9 +545,17 @@ Respon harus:
         }),
       });
 
+      if (response.status === 429 || response.status === 402) {
+        return new Response(JSON.stringify({
+          response: `Terima kasih atas laporannya 🌙 Keluhan Anda pada kategori ${currentKategori} sudah kami catat dan akan segera ditindaklanjuti oleh pihak terkait.`,
+          fallback: true,
+        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
       if (!response.ok) {
         throw new Error("Response generation error");
       }
+
 
       const data = await response.json();
       const empatheticResponse = data.choices[0]?.message?.content;
