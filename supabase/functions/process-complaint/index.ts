@@ -110,9 +110,23 @@ Balas HANYA dengan nama kategori (huruf kecil) tanpa penjelasan.`;
         }),
       });
 
+      if (response.status === 429 || response.status === 402) {
+        // Kuota AI habis -> klasifikasi berbasis kata kunci deskripsi kategori
+        const t = String(message || "").toLowerCase();
+        let matched = "lainnya";
+        for (const c of (dbCategories || [])) {
+          const words = `${c.name} ${c.description}`.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 4);
+          if (words.some((w) => t.includes(w))) { matched = c.name; break; }
+        }
+        return new Response(JSON.stringify({ kategori: matched, fallback: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       if (!response.ok) {
         throw new Error("Classification error");
       }
+
 
       const data = await response.json();
       const kategori = data.choices[0]?.message?.content?.trim().toLowerCase();
