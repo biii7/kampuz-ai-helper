@@ -46,11 +46,22 @@ Balas hanya dengan satu kata: keluhan atau informasi`;
         }),
       });
 
+      if (response.status === 429 || response.status === 402) {
+        // Kuota AI habis -> deteksi intent sederhana berbasis kata kunci
+        const t = String(message || "").toLowerCase();
+        const complaintWords = ["rusak", "tidak", "gak", "nggak", "bocor", "mati", "lambat", "kotor", "keluhan", "lapor", "protes", "kecewa", "error"];
+        const fallbackIntent = complaintWords.some((w) => t.includes(w)) ? "keluhan" : "informasi";
+        return new Response(JSON.stringify({ intent: fallbackIntent, fallback: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error("AI gateway error:", response.status, errorText);
         throw new Error("AI gateway error");
       }
+
 
       const data = await response.json();
       const intent = data.choices[0]?.message?.content?.trim().toLowerCase();
@@ -99,9 +110,23 @@ Balas HANYA dengan nama kategori (huruf kecil) tanpa penjelasan.`;
         }),
       });
 
+      if (response.status === 429 || response.status === 402) {
+        // Kuota AI habis -> klasifikasi berbasis kata kunci deskripsi kategori
+        const t = String(message || "").toLowerCase();
+        let matched = "lainnya";
+        for (const c of (dbCategories || [])) {
+          const words = `${c.name} ${c.description}`.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 4);
+          if (words.some((w) => t.includes(w))) { matched = c.name; break; }
+        }
+        return new Response(JSON.stringify({ kategori: matched, fallback: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       if (!response.ok) {
         throw new Error("Classification error");
       }
+
 
       const data = await response.json();
       const kategori = data.choices[0]?.message?.content?.trim().toLowerCase();
@@ -135,9 +160,22 @@ Balas HANYA dengan JSON tanpa penjelasan. Contoh:
         }),
       });
 
+      if (response.status === 429 || response.status === 402) {
+        // Kuota AI habis -> ekstraksi sederhana via regex
+        const text = String(message || "");
+        const nimMatch = text.match(/\b\d{10,12}\b/);
+        return new Response(JSON.stringify({
+          nim: nimMatch ? nimMatch[0] : "tidak disebutkan",
+          lokasi: "tidak disebutkan",
+          subjek: text.split(/\s+/).slice(0, 6).join(" ") || "keluhan umum",
+          fallback: true,
+        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
       if (!response.ok) {
         throw new Error("NER error");
       }
+
 
       const data = await response.json();
       const content = data.choices[0]?.message?.content?.trim();
@@ -366,11 +404,41 @@ Jawaban:`;
         }),
       });
 
+      // ===== Fallback: kuota AI habis / rate limit -> jawab dari dokumen saja =====
+      if (response.status === 429 || response.status === 402) {
+        console.warn('AI quota/rate limit reached, falling back to document-only answer');
+
+        let fallbackAnswer: string;
+        if (documents.length > 0) {
+          const top = documents.slice(0, 3);
+          const excerpts = top.map((doc: any) => {
+            const title = doc.title || 'Dokumen Kampus';
+            const content = (doc.content || '').replace(/\s+/g, ' ').trim().substring(0, 1200);
+            return `📄 **${title}**\n${content}${(doc.content || '').length > 1200 ? '…' : ''}`;
+          }).join("\n\n");
+
+          fallbackAnswer = `Assalamu'alaikum 🌙\n\nSaat ini layanan AI sedang tidak tersedia, jadi saya tampilkan kutipan langsung dari dokumen kampus yang paling relevan dengan pertanyaan Anda:\n\n${excerpts}\n\nSilakan baca kutipan di atas. Jika informasi yang Anda cari belum terlihat, coba ajukan pertanyaan yang lebih spesifik.`;
+        } else {
+          fallbackAnswer = `Assalamu'alaikum 🌙\n\nMohon maaf, layanan AI sedang tidak tersedia dan belum ada dokumen kampus yang cocok dengan pertanyaan Anda. Silakan coba beberapa saat lagi.`;
+        }
+
+        return new Response(JSON.stringify({
+          answer: fallbackAnswer,
+          documentsUsed: documents.length,
+          cached: false,
+          fallback: true,
+          reason: response.status === 429 ? "rate_limit" : "quota_exhausted",
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('AI response error:', response.status, errorText);
         throw new Error("RAG error");
       }
+
 
       const data = await response.json();
       const answer = data.choices[0]?.message?.content;
@@ -426,9 +494,16 @@ Balas hanya dengan satu kata: frustrated, sad, worried, atau neutral`;
         }),
       });
 
+      if (response.status === 429 || response.status === 402) {
+        return new Response(JSON.stringify({ sentiment: "neutral", fallback: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       if (!response.ok) {
         throw new Error("Sentiment analysis error");
       }
+
 
       const data = await response.json();
       const sentiment = data.choices[0]?.message?.content?.trim().toLowerCase();
@@ -477,9 +552,17 @@ Respon harus:
         }),
       });
 
+      if (response.status === 429 || response.status === 402) {
+        return new Response(JSON.stringify({
+          response: `Terima kasih atas laporannya 🌙 Keluhan Anda pada kategori ${currentKategori} sudah kami catat dan akan segera ditindaklanjuti oleh pihak terkait.`,
+          fallback: true,
+        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
       if (!response.ok) {
         throw new Error("Response generation error");
       }
+
 
       const data = await response.json();
       const empatheticResponse = data.choices[0]?.message?.content;
