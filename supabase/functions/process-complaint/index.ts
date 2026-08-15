@@ -494,9 +494,16 @@ Balas hanya dengan satu kata: frustrated, sad, worried, atau neutral`;
         }),
       });
 
+      if (response.status === 429 || response.status === 402) {
+        return new Response(JSON.stringify({ sentiment: "neutral", fallback: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       if (!response.ok) {
         throw new Error("Sentiment analysis error");
       }
+
 
       const data = await response.json();
       const sentiment = data.choices[0]?.message?.content?.trim().toLowerCase();
