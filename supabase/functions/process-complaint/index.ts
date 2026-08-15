@@ -146,9 +146,22 @@ Balas HANYA dengan JSON tanpa penjelasan. Contoh:
         }),
       });
 
+      if (response.status === 429 || response.status === 402) {
+        // Kuota AI habis -> ekstraksi sederhana via regex
+        const text = String(message || "");
+        const nimMatch = text.match(/\b\d{10,12}\b/);
+        return new Response(JSON.stringify({
+          nim: nimMatch ? nimMatch[0] : "tidak disebutkan",
+          lokasi: "tidak disebutkan",
+          subjek: text.split(/\s+/).slice(0, 6).join(" ") || "keluhan umum",
+          fallback: true,
+        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
       if (!response.ok) {
         throw new Error("NER error");
       }
+
 
       const data = await response.json();
       const content = data.choices[0]?.message?.content?.trim();
