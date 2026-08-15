@@ -46,11 +46,22 @@ Balas hanya dengan satu kata: keluhan atau informasi`;
         }),
       });
 
+      if (response.status === 429 || response.status === 402) {
+        // Kuota AI habis -> deteksi intent sederhana berbasis kata kunci
+        const t = String(message || "").toLowerCase();
+        const complaintWords = ["rusak", "tidak", "gak", "nggak", "bocor", "mati", "lambat", "kotor", "keluhan", "lapor", "protes", "kecewa", "error"];
+        const fallbackIntent = complaintWords.some((w) => t.includes(w)) ? "keluhan" : "informasi";
+        return new Response(JSON.stringify({ intent: fallbackIntent, fallback: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error("AI gateway error:", response.status, errorText);
         throw new Error("AI gateway error");
       }
+
 
       const data = await response.json();
       const intent = data.choices[0]?.message?.content?.trim().toLowerCase();
