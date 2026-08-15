@@ -366,11 +366,41 @@ Jawaban:`;
         }),
       });
 
+      // ===== Fallback: kuota AI habis / rate limit -> jawab dari dokumen saja =====
+      if (response.status === 429 || response.status === 402) {
+        console.warn('AI quota/rate limit reached, falling back to document-only answer');
+
+        let fallbackAnswer: string;
+        if (documents.length > 0) {
+          const top = documents.slice(0, 3);
+          const excerpts = top.map((doc: any) => {
+            const title = doc.title || 'Dokumen Kampus';
+            const content = (doc.content || '').replace(/\s+/g, ' ').trim().substring(0, 1200);
+            return `📄 **${title}**\n${content}${(doc.content || '').length > 1200 ? '…' : ''}`;
+          }).join("\n\n");
+
+          fallbackAnswer = `Assalamu'alaikum 🌙\n\nSaat ini layanan AI sedang tidak tersedia, jadi saya tampilkan kutipan langsung dari dokumen kampus yang paling relevan dengan pertanyaan Anda:\n\n${excerpts}\n\nSilakan baca kutipan di atas. Jika informasi yang Anda cari belum terlihat, coba ajukan pertanyaan yang lebih spesifik.`;
+        } else {
+          fallbackAnswer = `Assalamu'alaikum 🌙\n\nMohon maaf, layanan AI sedang tidak tersedia dan belum ada dokumen kampus yang cocok dengan pertanyaan Anda. Silakan coba beberapa saat lagi.`;
+        }
+
+        return new Response(JSON.stringify({
+          answer: fallbackAnswer,
+          documentsUsed: documents.length,
+          cached: false,
+          fallback: true,
+          reason: response.status === 429 ? "rate_limit" : "quota_exhausted",
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('AI response error:', response.status, errorText);
         throw new Error("RAG error");
       }
+
 
       const data = await response.json();
       const answer = data.choices[0]?.message?.content;
